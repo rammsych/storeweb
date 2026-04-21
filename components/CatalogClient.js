@@ -105,12 +105,26 @@ export default function CatalogClient({ products, user }) {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
-      <div className="mb-6 flex flex-col gap-3 rounded-2xl bg-white p-6 shadow md:flex-row md:items-center md:justify-between">
+      <div className="mb-6 flex flex-col gap-4 rounded-2xl bg-white p-6 shadow md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-green-800">Catálogo de verdulería</h1>
-          <p className="text-slate-600">Hola {user.name}. Agrega productos y envía tu solicitud al vendedor.</p>
+          <p className="text-slate-600">
+            Hola {user.name}. Agrega productos y envía tu solicitud al vendedor.
+          </p>
         </div>
-        <SignOutButton />
+
+        <div className="flex flex-wrap gap-3">
+          {user.role === 'ADMIN' ? (
+            <a
+              href="/admin/products"
+              className="rounded-lg bg-orange-500 px-4 py-2 font-semibold text-white hover:bg-orange-600"
+            >
+              Administrar
+            </a>
+          ) : null}
+
+          <SignOutButton />
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
