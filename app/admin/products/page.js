@@ -15,9 +15,18 @@ export default async function AdminProductsPage() {
     redirect('/catalog');
   }
 
-  const products = await prisma.product.findMany({
-    orderBy: { createdAt: 'desc' },
-  });
+  let products = [];
+
+  try {
+    products = await prisma.product.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+
+    console.log('Admin products loaded:', products.length);
+  } catch (error) {
+    console.error('Error loading admin products:', error);
+    products = [];
+  }
 
   return <AdminProductsClient products={products} user={session.user} />;
 }

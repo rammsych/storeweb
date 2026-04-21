@@ -11,10 +11,19 @@ export default async function CatalogPage() {
     redirect('/login?callbackUrl=/catalog');
   }
 
-  const products = await prisma.product.findMany({
-    where: { isActive: true },
-    orderBy: { name: 'asc' },
-  });
+  let products = [];
+
+  try {
+    products = await prisma.product.findMany({
+      where: { isActive: true },
+      orderBy: { name: 'asc' },
+    });
+
+    console.log('Catalog products loaded:', products.length);
+  } catch (error) {
+    console.error('Error loading catalog products:', error);
+    products = [];
+  }
 
   return <CatalogClient products={products} user={session.user} />;
 }
