@@ -219,3 +219,36 @@ NEXTAUTH_URL="http://localhost:3000"
 
 ## 13) Siguiente evolución recomendada
 Para producción yo te recomendaría después migrar desde SQLite a PostgreSQL y desplegar en Vercel o Railway.
+
+
+## Desplegar
+
+Paso 4 — Probar localmente
+
+Levanta el proyecto:
+
+npm run dev
+Prueba como cliente
+
+Login con:
+
+cliente@demo.cl
+123456
+
+Luego entra a /catalog.
+
+Resultado esperado:
+ves catálogo
+no ves botón Administrar
+Prueba como admin
+
+Login con:
+
+admin@verduleria.cl
+123456
+
+Luego entra a /catalog.
+
+Resultado esperado:
+ves catálogo
+ves botón Administrar
