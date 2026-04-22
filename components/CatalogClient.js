@@ -1,20 +1,36 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import {  useEffect, useMemo, useState } from 'react';
 import { formatPrice, getUnitLabel } from '@/lib/format';
 import SignOutButton from '@/components/SignOutButton';
 import FloatingCartButton from '@/components/FloatingCartButton';
+import MobileToast from '@/components/MobileToast';
+
 
 export default function CatalogClient({ products, user }) {
   const [cart, setCart] = useState([]);
   const [note, setNote] = useState('');
   const [sending, setSending] = useState(false);
-  const [message, setMessage] = useState('');
+  const [toast, setToast] = useState({
+    open: false,
+    message: '',
+    type: 'success',
+  });
   const itemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+
+  useEffect(() => {
+    if (!toast.open) return;
+
+    const timer = setTimeout(() => {
+      setToast((current) => ({ ...current, open: false }));
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [toast.open]);
 
 
   function addToCart(product) {
-    setMessage('');
+    setToast((current) => ({ ...current, open: false }));
     setCart((current) => {
       const existing = current.find((item) => item.productId === product.id);
       if (existing) {
@@ -58,12 +74,16 @@ export default function CatalogClient({ products, user }) {
 
   async function submitOrder() {
     if (cart.length === 0) {
-      setMessage('Debes agregar al menos un producto.');
+      setToast({
+      open: true,
+      message: 'Debes agregar al menos un producto.',
+      type: 'error',
+    });
       return;
     }
 
     setSending(true);
-    setMessage('');
+    setToast((current) => ({ ...current, open: false }));
 
    const response = await fetch('/api/orders', {
       method: 'POST',
@@ -97,17 +117,31 @@ export default function CatalogClient({ products, user }) {
     setSending(false);
 
     if (!response.ok) {
-      alert(data.error || 'No se pudo enviar la solicitud');
+      setToast({
+        open: true,
+        message: data.error || 'No se pudo enviar la solicitud',
+        type: 'error',
+      });
       return;
     }
 
     setCart([]);
     setNote('');
-    setMessage(`Solicitud enviada correctamente. ID pedido: ${data.orderId}`);
+    setToast({
+      open: true,
+      message: `Solicitud enviada correctamente. ID pedido: ${data.orderId}`,
+      type: 'success',
+    });
   }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
+      <MobileToast
+        open={toast.open}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast((current) => ({ ...current, open: false }))}
+      />
       <div className="mb-6 flex flex-col gap-4 rounded-2xl bg-white p-6 shadow md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-green-800">Catálogo de verdulería</h1>
@@ -201,7 +235,7 @@ export default function CatalogClient({ products, user }) {
             <p className="mt-3 text-lg font-bold">Total estimado: {formatPrice(total)}</p>
           </div>
 
-          {message ? <p className="mt-4 text-sm font-medium text-green-700">{message}</p> : null}
+         
 
           <button
             onClick={submitOrder}
