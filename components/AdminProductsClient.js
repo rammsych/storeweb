@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function AdminProductsClient({ products: initialProducts, user }) {
+  const router = useRouter();
   const [products, setProducts] = useState(initialProducts);
   const [form, setForm] = useState({
     name: '',
@@ -86,6 +88,24 @@ export default function AdminProductsClient({ products: initialProducts, user })
       <div className="mb-6 rounded-2xl bg-white p-6 shadow">
         <h1 className="text-3xl font-bold text-green-800">Panel Administrador</h1>
         <p className="text-slate-600">Hola {user.name}, aquí puedes administrar productos.</p>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+        <h2>Administración de Productos</h2>
+
+        <button
+          onClick={() => router.push('/catalog')}
+          style={{
+            padding: '8px 14px',
+            backgroundColor: '#f5f5f5',
+            color: '#333',
+            border: '1px solid #ddd',
+            borderRadius: '6px',
+            cursor: 'pointer',
+          }}
+        >
+          ← Volver al Catálogo
+        </button>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
