@@ -3,12 +3,15 @@
 import { useMemo, useState } from 'react';
 import { formatPrice, getUnitLabel } from '@/lib/format';
 import SignOutButton from '@/components/SignOutButton';
+import FloatingCartButton from '@/components/FloatingCartButton';
 
 export default function CatalogClient({ products, user }) {
   const [cart, setCart] = useState([]);
   const [note, setNote] = useState('');
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState('');
+  const itemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+
 
   function addToCart(product) {
     setMessage('');
@@ -152,7 +155,7 @@ export default function CatalogClient({ products, user }) {
           ))}
         </section>
 
-        <aside className="h-fit rounded-2xl bg-white p-6 shadow">
+        <aside  id="tu-solicitud"  className="h-fit rounded-2xl bg-white p-6 shadow">
           <h2 className="mb-4 text-2xl font-bold text-green-800">Tu solicitud</h2>
           <div className="space-y-4">
             {cart.length === 0 ? (
@@ -171,8 +174,8 @@ export default function CatalogClient({ products, user }) {
                   </div>
                   <input
                     type="number"
-                    step="0.1"
-                    min="0.1"
+                    step="1"
+                    min="1"
                     value={item.quantity}
                     onChange={(e) => updateQuantity(item.productId, e.target.value)}
                   />
@@ -209,6 +212,7 @@ export default function CatalogClient({ products, user }) {
           </button>
         </aside>
       </div>
+      <FloatingCartButton itemCount={itemCount} />
     </div>
   );
 }

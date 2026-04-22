@@ -110,6 +110,21 @@ export async function POST(request) {
       `,
     });
 
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM,
+      to: order.customerEmail,
+      subject: 'Recibimos tu solicitud de compra',
+      html: `
+        <h2>Gracias por tu solicitud</h2>
+        <p>Hola ${order.customerName}, recibimos correctamente tu pedido.</p>
+        <p><strong>Total estimado:</strong> $${order.totalEstimated}</p>
+        <h3>Productos solicitados</h3>
+        <ul>${itemsHtml}</ul>
+        <p><strong>Comentario:</strong> ${order.notes || '-'}</p>
+        <p>Pronto nos pondremos en contacto contigo.</p>
+      `,
+    });
+
     return NextResponse.json({
       message: 'Solicitud enviada correctamente',
       orderId: order.id,
