@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-export async function PUT(request, { params }) {
+export async function PATCH(request, { params }) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -15,26 +15,21 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 
-    const { id } = params;
     const body = await request.json();
 
-    const updatedProduct = await prisma.product.update({
-      where: {
-        id: id,
-      },
+    const product = await prisma.product.update({
+      where: { id: params.id },
       data: {
-        name: body.name,
-        description: body.description,
-        price: body.price,
-        unitType: body.unitType,
-        imageUrl: body.imageUrl,
         isActive: body.isActive,
       },
     });
 
-    return NextResponse.json(updatedProduct);
+    return NextResponse.json({
+      message: 'Producto actualizado',
+      product,
+    });
   } catch (error) {
-    console.error('Error updating product:', error);
+    console.error('ADMIN PRODUCTS PATCH ERROR:', error);
     return NextResponse.json(
       { error: 'Error al actualizar producto' },
       { status: 500 }

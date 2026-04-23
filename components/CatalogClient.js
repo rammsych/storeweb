@@ -168,7 +168,11 @@ export default function CatalogClient({ products, user }) {
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {products.map((product) => (
             <article key={product.id} className="overflow-hidden rounded-2xl bg-white shadow">
-              <img src={product.imageUrl} alt={product.name} className="h-48 w-full object-cover" />
+              <img
+                src={product.imageUrl || '/placeholder-product.png'}
+                alt={product.name}
+                className="h-48 w-full object-cover"
+              />
               <div className="p-5">
                 <h2 className="text-xl font-semibold">{product.name}</h2>
                 <p className="mb-3 text-sm text-slate-600">{product.description}</p>
