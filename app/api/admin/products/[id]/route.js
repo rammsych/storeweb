@@ -20,7 +20,7 @@ export async function PUT(request, { params }) {
 
     const updatedProduct = await prisma.product.update({
       where: {
-        id: Number(id),
+        id: id,
       },
       data: {
         name: body.name,
@@ -63,7 +63,7 @@ export async function PATCH(request, { params }) {
 
     const updatedProduct = await prisma.product.update({
       where: {
-        id: Number(id),
+        id: id,
       },
       data: {
         isActive: Boolean(body.isActive),
