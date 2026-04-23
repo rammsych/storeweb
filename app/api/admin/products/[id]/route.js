@@ -20,7 +20,7 @@ export async function PUT(request, { params }) {
 
     const updatedProduct = await prisma.product.update({
       where: {
-        id: id,
+        id: Number(id),
       },
       data: {
         name: body.name,
@@ -32,11 +32,52 @@ export async function PUT(request, { params }) {
       },
     });
 
-    return NextResponse.json(updatedProduct);
+    return NextResponse.json({
+      message: 'Producto actualizado correctamente',
+      product: updatedProduct,
+    });
   } catch (error) {
     console.error('Error updating product:', error);
     return NextResponse.json(
       { error: 'Error al actualizar producto' },
+      { status: 500 }
+    );
+  }
+}
+
+
+export async function PATCH(request, { params }) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user) {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    }
+
+    if (session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    }
+
+    const { id } = params;
+    const body = await request.json();
+
+    const updatedProduct = await prisma.product.update({
+      where: {
+        id: Number(id),
+      },
+      data: {
+        isActive: Boolean(body.isActive),
+      },
+    });
+
+    return NextResponse.json({
+      message: 'Estado del producto actualizado correctamente',
+      product: updatedProduct,
+    });
+  } catch (error) {
+    console.error('Error patching product:', error);
+    return NextResponse.json(
+      { error: 'Error al actualizar estado del producto' },
       { status: 500 }
     );
   }
