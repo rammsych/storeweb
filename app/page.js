@@ -5,7 +5,7 @@ export default function HomePage() {
     <main className="min-h-screen bg-green-800 px-6 py-10 text-white">
       <div className="mx-auto max-w-6xl">
         <p className="mb-8 text-sm uppercase tracking-[0.35em] text-green-100">
-          StoreWeb Prototipo MVP 1.4 Puls@ft
+          StoreWeb Prototipo MVP 1.5 Puls@ft
         </p>
 
         <h1 className="max-w-4xl text-5xl font-bold leading-tight md:text-7xl">

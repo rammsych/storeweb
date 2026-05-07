@@ -1,38 +1,16 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { Autocomplete, LoadScript } from '@react-google-maps/api';
-
-const libraries = ['places'];
 
 export default function RegisterPage() {
-  const autocompleteRef = useRef(null);
-
   const [form, setForm] = useState({
     name: '',
     email: '',
     phone: '',
     address: '',
-    latitude: null,
-    longitude: null,
     password: '',
   });
-
-  const handlePlaceChanged = () => {
-    const place = autocompleteRef.current?.getPlace();
-
-    if (!place?.geometry?.location) {
-      return;
-    }
-
-    setForm((current) => ({
-      ...current,
-      address: place.formatted_address || current.address,
-      latitude: place.geometry.location.lat(),
-      longitude: place.geometry.location.lng(),
-    }));
-  };
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -41,7 +19,11 @@ export default function RegisterPage() {
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          latitude: null,
+          longitude: null,
+        }),
       });
 
       const data = await res.json();
@@ -62,9 +44,7 @@ export default function RegisterPage() {
     <main className="flex min-h-screen items-center justify-center px-4 py-10">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
         <h1 className="mb-2 text-3xl font-bold text-green-800">Crear cuenta</h1>
-        <p className="mb-6 text-sm text-gray-600">
-          Registro básico para el prototipo
-        </p>
+        <p className="mb-6 text-sm text-gray-600">Registro básico para el prototipo</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
@@ -99,39 +79,17 @@ export default function RegisterPage() {
             onChange={(e) => setForm({ ...form, phone: e.target.value })}
           />
 
-          <LoadScript
-            googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-            libraries={libraries}
-          >
-            <Autocomplete
-              onLoad={(autocomplete) => {
-                autocompleteRef.current = autocomplete;
-              }}
-              onPlaceChanged={handlePlaceChanged}
-              options={{
-                componentRestrictions: { country: 'cl' },
-                fields: ['formatted_address', 'geometry'],
-              }}
-            >
-              <input
-                id="address"
-                name="address"
-                type="text"
-                autoComplete="off"
-                className="w-full rounded-lg border p-2"
-                placeholder="Busca y selecciona tu dirección"
-                value={form.address}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    address: e.target.value,
-                    latitude: null,
-                    longitude: null,
-                  })
-                }
-              />
-            </Autocomplete>
-          </LoadScript>
+
+          <input
+            id="address"
+            name="address"
+            type="text"
+            autoComplete="street-address"
+            className="w-full rounded-lg border p-2"
+            placeholder="Dirección"
+            value={form.address}
+            onChange={(e) => setForm({ ...form, address: e.target.value })}
+          />
 
           <input
             id="password"

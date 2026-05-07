@@ -16,9 +16,17 @@ function LoginInner() {
         <p className="mb-6 text-sm text-slate-600">Demo incluida: cliente@demo.cl / 123456</p>
 
         {error ? (
-          <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
-            No fue posible iniciar sesión. Revisa tus datos.
-          </p>
+          <div
+            className={`mb-4 rounded-xl p-4 text-sm font-medium ${
+              error === 'USER_DISABLED'
+                ? 'bg-orange-50 text-orange-700 border border-orange-200'
+                : 'bg-red-50 text-red-600 border border-red-200'
+            }`}
+          >
+            {error === 'USER_DISABLED'
+              ? 'Tu cuenta fue deshabilitada. Contacta al administrador.'
+              : 'No fue posible iniciar sesión. Revisa tus datos.'}
+          </div>
         ) : null}
 
         <LoginForm />
