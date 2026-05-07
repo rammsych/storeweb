@@ -28,7 +28,14 @@ export default function LoginForm() {
     setLoading(false);
 
     if (result?.error) {
-      setError('No fue posible iniciar sesión. Revisa tus datos.');
+      console.log('LOGIN ERROR:', result.error);
+
+      if (result.error === 'USER_DISABLED') {
+        setError('Tu cuenta fue deshabilitada. Contacta al administrador.');
+      } else {
+        setError('No fue posible iniciar sesión. Revisa tus datos.');
+      }
+
       return;
     }
 
@@ -46,7 +53,11 @@ export default function LoginForm() {
         <label className="mb-1 block text-sm font-medium">Contraseña</label>
         <input name="password" type="password" required placeholder="******" />
       </div>
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {error ? (
+  <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">
+    {error}
+  </div>
+) : null}
       <button
         type="submit"
         disabled={loading}

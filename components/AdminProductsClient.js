@@ -3,6 +3,7 @@
 import { useState, useEffect  } from 'react';
 import { useRouter } from 'next/navigation';
 import MobileToast from '@/components/MobileToast';
+import AdminShell from '@/components/AdminShell';
 
 
 export default function AdminProductsClient({ products: initialProducts, user }) {
@@ -345,6 +346,7 @@ export default function AdminProductsClient({ products: initialProducts, user })
   
 
   return (
+    <AdminShell>
     <main className="mx-auto max-w-6xl px-4 py-8">
 
       <MobileToast
@@ -377,7 +379,7 @@ export default function AdminProductsClient({ products: initialProducts, user })
         </button>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
+      <div className="grid gap-6 xl:grid-cols-[1fr_1.2fr]">
         <section className="rounded-2xl bg-white p-6 shadow">
           <h2 className="mb-4 text-2xl font-bold text-green-800">Crear producto</h2>
 
@@ -484,7 +486,10 @@ export default function AdminProductsClient({ products: initialProducts, user })
 
           <div className="space-y-4">
             {products.map((product) => (
-              <div key={product.id} className="rounded-xl border p-4">
+              <div
+                key={product.id}
+                className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm"
+              >
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-lg font-semibold">{product.name}</p>
@@ -527,7 +532,7 @@ export default function AdminProductsClient({ products: initialProducts, user })
                     </button>
                   </div> */}
 
-                  <div className="flex gap-2">
+                 <div className="flex flex-col gap-2 sm:flex-row">
   <button
     onClick={() => openEditModal(product)}
     className="rounded bg-sky-500 px-3 py-1 text-white hover:bg-sky-600"
@@ -681,5 +686,6 @@ export default function AdminProductsClient({ products: initialProducts, user })
 )}
       </div>
     </main>
+    </AdminShell>
   );
 }
