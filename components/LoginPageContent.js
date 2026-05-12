@@ -13,7 +13,7 @@ function LoginInner() {
     <main className="flex min-h-screen items-center justify-center px-4 py-10">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
         <h1 className="mb-2 text-3xl font-bold text-green-800">Iniciar sesión</h1>
-        <p className="mb-6 text-sm text-slate-600">Storeweb@ Pulsoft 1.5.0 </p>
+        <p className="mb-6 text-sm text-slate-600">Storeweb@ Pulsoft 1.5.1 </p>
 
         {error ? (
           <div
