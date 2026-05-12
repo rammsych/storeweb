@@ -55,10 +55,28 @@ model Order {
   status         String   @default("pending")
   totalEstimated Float?
   createdAt      DateTime @default(now())
+  deliveryType String @default("NORMAL")
+  scheduledDeliveryDate DateTime?
+  scheduledDeliveryTime String?
 
   user  User        @relation(fields: [userId], references: [id])
   items OrderItem[]
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 model OrderItem {
   id          String   @id @default(cuid())
