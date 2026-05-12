@@ -34,7 +34,9 @@ export default function AdminPage() {
     try {
       setLoading(true);
 
-      const response = await fetch('/api/admin/scheduled-orders');
+      const response = await fetch('/api/admin/scheduled-orders', {
+        cache: 'no-store',
+      });
       const data = await response.json();
 
       if (!response.ok) {
