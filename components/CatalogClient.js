@@ -44,7 +44,6 @@ export default function CatalogClient({ products, user }) {
 
 
 
-
   const itemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   useEffect(() => {
@@ -57,31 +56,6 @@ export default function CatalogClient({ products, user }) {
     return () => clearTimeout(timer);
   }, [toast.open]);
 
-
-  // function addToCart(product) {
-  //   setToast((current) => ({ ...current, open: false }));
-  //   setCart((current) => {
-  //     const existing = current.find((item) => item.productId === product.id);
-  //     if (existing) {
-  //       return current.map((item) =>
-  //         item.productId === product.id
-  //           ? { ...item, quantity: Number((item.quantity + 1).toFixed(2)) }
-  //           : item
-  //       );
-  //     }
-
-  //     return [
-  //       ...current,
-  //       {
-  //         productId: product.id,
-  //         productName: product.name,
-  //         unitType: product.unitType,
-  //         unitPrice: product.price,
-  //         quantity: 1,
-  //       },
-  //     ];
-  //   });
-  // }
 
   function addToCart(product) {
     setToast((current) => ({ ...current, open: false }));
@@ -283,33 +257,12 @@ export default function CatalogClient({ products, user }) {
                 <h2 className="text-xl font-semibold">{product.name}</h2>
                 <p className="mb-3 text-sm text-slate-600">{product.description}</p>
 
-                {/* <div className="mb-4 flex items-center justify-between">
-                  <span className="text-lg font-bold text-green-700">{formatPrice(product.price)}</span>
-                  <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-                    por {getUnitLabel(product.unitType)}
-                  </span>
-                </div> */}
-
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <span className="text-lg font-bold text-green-700">
                     {formatPrice(product.price)}
                   </span>
 
                   <div className="flex items-center gap-2">
-                    {/* <input
-                      type="number"
-                      min="1"
-                      step="1"
-                      value={productQuantities[product.id] || 1}
-                      onChange={(e) =>
-                        setProductQuantities((current) => ({
-                          ...current,
-                          [product.id]: e.target.value,
-                        }))
-                      }
-                      className="w-16 rounded-lg border border-slate-300 px-2 py-1 text-center text-sm font-semibold"
-                    /> */}
-
 
                     <select
                       value={productQuantities[product.id] || 1}
@@ -427,10 +380,6 @@ export default function CatalogClient({ products, user }) {
             </div>
           </div>
 
-
-
-
-
           <div className="mt-5">
             <label className="mb-1 block text-sm font-medium">Comentario para el vendedor</label>
             <textarea
@@ -448,33 +397,16 @@ export default function CatalogClient({ products, user }) {
             <p className="mt-3 text-lg font-bold">Total estimado: {formatPrice(total)}</p>
           </div>
 
-
-
           <button
             onClick={submitOrder}
             disabled={sending}
-            className="mt-5 w-full rounded-lg bg-orange-500 px-4 py-3 font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+            className="mt-5 mb-20 w-full rounded-lg bg-orange-500 px-4 py-3 font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
           >
+
             {sending ? 'Enviando solicitud...' : 'Enviar solicitud de compra'}
           </button>
         </aside>
       </div>
-
-
-
-      {/* <div className="fixed bottom-0 left-0 right-0 z-[90] border-t border-slate-200 bg-white/95 p-3 shadow-2xl backdrop-blur md:hidden">
-        <div className="grid grid-cols-2 gap-3">
-          <a
-            href="#tu-solicitud"
-            className="rounded-2xl bg-green-100 px-4 py-3 text-center text-sm font-bold text-green-700"
-          >
-            Ver pedido ({itemCount})
-          </a>
-
-          <SignOutButton />
-        </div>
-      </div> */}
-
 
       <div className="fixed bottom-0 left-0 right-0 z-[80] border-t border-slate-200 bg-white/95 p-3 shadow-2xl backdrop-blur md:hidden">
         <div className="flex justify-start">
@@ -484,22 +416,7 @@ export default function CatalogClient({ products, user }) {
         </div>
       </div>
 
-
-
-
-
-
       <FloatingCartButton itemCount={itemCount} />
-
-
-
-      {/* <div className="hidden md:block">
-        <FloatingCartButton itemCount={itemCount} />
-      </div> */}
-
-
-
-
 
     </div>
   );
