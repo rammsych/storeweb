@@ -9,6 +9,7 @@ import MobileToast from '@/components/MobileToast';
 
 export default function CatalogClient({ products, user }) {
   const [cart, setCart] = useState([]);
+  const [productQuantities, setProductQuantities] = useState({});
   const [note, setNote] = useState('');
   const [sending, setSending] = useState(false);
 
@@ -57,14 +58,55 @@ export default function CatalogClient({ products, user }) {
   }, [toast.open]);
 
 
+  // function addToCart(product) {
+  //   setToast((current) => ({ ...current, open: false }));
+  //   setCart((current) => {
+  //     const existing = current.find((item) => item.productId === product.id);
+  //     if (existing) {
+  //       return current.map((item) =>
+  //         item.productId === product.id
+  //           ? { ...item, quantity: Number((item.quantity + 1).toFixed(2)) }
+  //           : item
+  //       );
+  //     }
+
+  //     return [
+  //       ...current,
+  //       {
+  //         productId: product.id,
+  //         productName: product.name,
+  //         unitType: product.unitType,
+  //         unitPrice: product.price,
+  //         quantity: 1,
+  //       },
+  //     ];
+  //   });
+  // }
+
   function addToCart(product) {
     setToast((current) => ({ ...current, open: false }));
+
+    const selectedQuantity = Number(productQuantities[product.id] || 1);
+
+    if (selectedQuantity <= 0) {
+      setToast({
+        open: true,
+        message: 'La cantidad debe ser mayor a cero.',
+        type: 'error',
+      });
+      return;
+    }
+
     setCart((current) => {
       const existing = current.find((item) => item.productId === product.id);
+
       if (existing) {
         return current.map((item) =>
           item.productId === product.id
-            ? { ...item, quantity: Number((item.quantity + 1).toFixed(2)) }
+            ? {
+              ...item,
+              quantity: Number((item.quantity + selectedQuantity).toFixed(2)),
+            }
             : item
         );
       }
@@ -76,10 +118,15 @@ export default function CatalogClient({ products, user }) {
           productName: product.name,
           unitType: product.unitType,
           unitPrice: product.price,
-          quantity: 1,
+          quantity: selectedQuantity,
         },
       ];
     });
+
+    setProductQuantities((current) => ({
+      ...current,
+      [product.id]: 1,
+    }));
   }
 
   function updateQuantity(productId, quantity) {
@@ -220,7 +267,6 @@ export default function CatalogClient({ products, user }) {
             </a>
           ) : null}
 
-          <SignOutButton />
         </div>
       </div>
 
@@ -236,12 +282,58 @@ export default function CatalogClient({ products, user }) {
               <div className="p-5">
                 <h2 className="text-xl font-semibold">{product.name}</h2>
                 <p className="mb-3 text-sm text-slate-600">{product.description}</p>
-                <div className="mb-4 flex items-center justify-between">
+
+                {/* <div className="mb-4 flex items-center justify-between">
                   <span className="text-lg font-bold text-green-700">{formatPrice(product.price)}</span>
                   <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
                     por {getUnitLabel(product.unitType)}
                   </span>
+                </div> */}
+
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <span className="text-lg font-bold text-green-700">
+                    {formatPrice(product.price)}
+                  </span>
+
+                  <div className="flex items-center gap-2">
+                    {/* <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={productQuantities[product.id] || 1}
+                      onChange={(e) =>
+                        setProductQuantities((current) => ({
+                          ...current,
+                          [product.id]: e.target.value,
+                        }))
+                      }
+                      className="w-16 rounded-lg border border-slate-300 px-2 py-1 text-center text-sm font-semibold"
+                    /> */}
+
+
+                    <select
+                      value={productQuantities[product.id] || 1}
+                      onChange={(e) =>
+                        setProductQuantities((current) => ({
+                          ...current,
+                          [product.id]: Number(e.target.value),
+                        }))
+                      }
+                      className="h-9 w-16 rounded-xl border-2 border-orange-300 bg-white px-1 text-center text-sm font-bold text-slate-800 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
+                    >
+                      {Array.from({ length: 20 }, (_, index) => index + 1).map((qty) => (
+                        <option key={qty} value={qty}>
+                          {qty}
+                        </option>
+                      ))}
+                    </select>
+
+                    <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                      por {getUnitLabel(product.unitType)}
+                    </span>
+                  </div>
                 </div>
+
                 <button
                   onClick={() => addToCart(product)}
                   className="w-full rounded-lg bg-green-700 px-4 py-3 font-semibold text-white hover:bg-green-800"
@@ -367,7 +459,48 @@ export default function CatalogClient({ products, user }) {
           </button>
         </aside>
       </div>
+
+
+
+      {/* <div className="fixed bottom-0 left-0 right-0 z-[90] border-t border-slate-200 bg-white/95 p-3 shadow-2xl backdrop-blur md:hidden">
+        <div className="grid grid-cols-2 gap-3">
+          <a
+            href="#tu-solicitud"
+            className="rounded-2xl bg-green-100 px-4 py-3 text-center text-sm font-bold text-green-700"
+          >
+            Ver pedido ({itemCount})
+          </a>
+
+          <SignOutButton />
+        </div>
+      </div> */}
+
+
+      <div className="fixed bottom-0 left-0 right-0 z-[80] border-t border-slate-200 bg-white/95 p-3 shadow-2xl backdrop-blur md:hidden">
+        <div className="flex justify-start">
+          <div className="w-[160px]">
+            <SignOutButton />
+          </div>
+        </div>
+      </div>
+
+
+
+
+
+
       <FloatingCartButton itemCount={itemCount} />
+
+
+
+      {/* <div className="hidden md:block">
+        <FloatingCartButton itemCount={itemCount} />
+      </div> */}
+
+
+
+
+
     </div>
   );
 }
