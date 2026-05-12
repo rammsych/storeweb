@@ -16,7 +16,13 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const { items, notes } = body;
+    const {
+      items,
+      notes,
+      deliveryType,
+      scheduledDeliveryDate,
+      scheduledDeliveryTime,
+    } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -24,6 +30,40 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+
+
+    if (deliveryType === 'PROGRAMADO') {
+      if (!scheduledDeliveryDate || !scheduledDeliveryTime) {
+        return NextResponse.json(
+          { error: 'Debes indicar fecha y horario para el pedido programado' },
+          { status: 400 }
+        );
+      }
+
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+
+      const selectedDate = new Date(`${scheduledDeliveryDate}T00:00:00`);
+
+      if (selectedDate < tomorrow) {
+        return NextResponse.json(
+          { error: 'La fecha debe ser desde el día siguiente' },
+          { status: 400 }
+        );
+      }
+
+      if (scheduledDeliveryTime < '14:00' || scheduledDeliveryTime > '18:30') {
+        return NextResponse.json(
+          { error: 'Solo se permiten horarios entre 14:00 y 18:30 hrs' },
+          { status: 400 }
+        );
+      }
+    }
+
+
+
+
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
@@ -66,6 +106,11 @@ export async function POST(request) {
         longitude: user.longitude ?? null,
         notes: notes || null,
         status: 'pending',
+        deliveryType: deliveryType || 'NORMAL',
+        scheduledDeliveryDate: scheduledDeliveryDate
+          ? new Date(`${scheduledDeliveryDate}T00:00:00`)
+          : null,
+        scheduledDeliveryTime: scheduledDeliveryTime || null,
         totalEstimated,
         items: {
           create: normalizedItems,
@@ -86,6 +131,23 @@ export async function POST(request) {
       },
     });
 
+    const deliveryHtml =
+      order.deliveryType === 'PROGRAMADO'
+        ? `
+      <div style="margin:16px 0;padding:14px;border-radius:12px;background:#fff7ed;border:1px solid #fdba74;">
+        <h3 style="margin:0 0 10px 0;color:#c2410c;">
+          Pedido Programado
+        </h3>
+        <p><strong>Fecha de entrega:</strong> ${new Date(order.scheduledDeliveryDate).toLocaleDateString('es-CL')}</p>
+        <p><strong>Horario:</strong> ${order.scheduledDeliveryTime} hrs</p>
+      </div>
+    `
+        : `
+      <div style="margin:16px 0;padding:14px;border-radius:12px;background:#ecfdf5;border:1px solid #86efac;">
+        <strong>Tipo de entrega:</strong> Pedido normal
+      </div>
+    `;
+
     const itemsHtml = order.items
       .map(
         (item) =>
@@ -104,6 +166,7 @@ export async function POST(request) {
         <p><strong>Teléfono:</strong> ${order.customerPhone || '-'}</p>
         <p><strong>Dirección:</strong> ${order.address || '-'}</p>
         <p><strong>Comentario:</strong> ${order.notes || '-'}</p>
+        ${deliveryHtml}
         <p><strong>Total estimado:</strong> $${order.totalEstimated}</p>
         <h3>Productos</h3>
         <ul>${itemsHtml}</ul>
@@ -117,6 +180,7 @@ export async function POST(request) {
       html: `
         <h2>Gracias por tu solicitud</h2>
         <p>Hola ${order.customerName}, recibimos correctamente tu pedido.</p>
+        ${deliveryHtml}
         <p><strong>Total estimado:</strong> $${order.totalEstimated}</p>
         <h3>Productos solicitados</h3>
         <ul>${itemsHtml}</ul>

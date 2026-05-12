@@ -1,6 +1,6 @@
 'use client';
 
-import {  useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { formatPrice, getUnitLabel } from '@/lib/format';
 import SignOutButton from '@/components/SignOutButton';
 import FloatingCartButton from '@/components/FloatingCartButton';
@@ -11,11 +11,39 @@ export default function CatalogClient({ products, user }) {
   const [cart, setCart] = useState([]);
   const [note, setNote] = useState('');
   const [sending, setSending] = useState(false);
+
+  const [scheduledDate, setScheduledDate] = useState('');
+  const [scheduledTime, setScheduledTime] = useState('');
   const [toast, setToast] = useState({
     open: false,
     message: '',
     type: 'success',
   });
+
+
+
+  const getTomorrowDate = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
+  };
+
+  const timeSlots = [
+    '14:00',
+    '14:30',
+    '15:00',
+    '15:30',
+    '16:00',
+    '16:30',
+    '17:00',
+    '17:30',
+    '18:00',
+    '18:30',
+  ];
+
+
+
+
   const itemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   useEffect(() => {
@@ -75,17 +103,46 @@ export default function CatalogClient({ products, user }) {
   async function submitOrder() {
     if (cart.length === 0) {
       setToast({
-      open: true,
-      message: 'Debes agregar al menos un producto.',
-      type: 'error',
-    });
+        open: true,
+        message: 'Debes agregar al menos un producto.',
+        type: 'error',
+      });
       return;
     }
 
+
+    if (!scheduledDate || !scheduledTime) {
+      setToast({
+        open: true,
+        message: 'Debes seleccionar fecha y horario del pedido.',
+        type: 'error',
+      });
+      return;
+    }
+
+    const tomorrow = getTomorrowDate();
+
+    if (scheduledDate < tomorrow) {
+      setToast({
+        open: true,
+        message: 'Solo puedes seleccionar desde el día siguiente.',
+        type: 'error',
+      });
+      return;
+    }
+
+    if (scheduledTime < '14:00' || scheduledTime > '18:30') {
+      setToast({
+        open: true,
+        message: 'Solo puedes seleccionar horarios entre 14:00 y 18:30 hrs.',
+        type: 'error',
+      });
+      return;
+    }
     setSending(true);
     setToast((current) => ({ ...current, open: false }));
 
-   const response = await fetch('/api/orders', {
+    const response = await fetch('/api/orders', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -93,17 +150,13 @@ export default function CatalogClient({ products, user }) {
       body: JSON.stringify({
         items: cart,
         notes: note,
+        deliveryType: 'PROGRAMADO',
+        scheduledDeliveryDate: scheduledDate,
+        scheduledDeliveryTime: scheduledTime,
       }),
     });
 
-    // const data = await response.json();
 
-    // setSending(false);
-
-    // if (!response.ok) {
-    //   setMessage(data.error || 'No se pudo enviar la solicitud.');
-    //   return;
-    // }
 
     let data = {};
     const text = await response.text();
@@ -127,6 +180,13 @@ export default function CatalogClient({ products, user }) {
 
     setCart([]);
     setNote('');
+
+
+    setScheduledDate('');
+    setScheduledTime('');
+
+
+
     setToast({
       open: true,
       message: `Solicitud enviada correctamente. ID pedido: ${data.orderId}`,
@@ -153,7 +213,7 @@ export default function CatalogClient({ products, user }) {
         <div className="flex flex-wrap gap-3">
           {user.role === 'ADMIN' ? (
             <a
-              href="/admin/customers"
+              href="/admin"
               className="rounded-lg bg-orange-500 px-4 py-2 font-semibold text-white hover:bg-orange-600"
             >
               Administrar
@@ -193,7 +253,7 @@ export default function CatalogClient({ products, user }) {
           ))}
         </section>
 
-        <aside  id="tu-solicitud"  className="h-fit rounded-2xl bg-white p-6 shadow">
+        <aside id="tu-solicitud" className="h-fit rounded-2xl bg-white p-6 shadow">
           <h2 className="mb-4 text-2xl font-bold text-green-800">Tu solicitud</h2>
           <div className="space-y-4">
             {cart.length === 0 ? (
@@ -222,6 +282,63 @@ export default function CatalogClient({ products, user }) {
             )}
           </div>
 
+
+          <div className="mt-5 rounded-2xl border border-orange-200 bg-orange-50 p-4">
+            <h3 className="mb-4 text-xl font-bold text-orange-700">
+              Pedido Programado
+            </h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium">
+                  Fecha de entrega
+                </label>
+
+                <input
+                  type="date"
+                  min={getTomorrowDate()}
+                  value={scheduledDate}
+                  onChange={(e) => setScheduledDate(e.target.value)}
+                  className="w-full rounded-lg border p-2"
+                />
+
+                <p className="mt-1 text-xs text-slate-500">
+                  Disponible desde el día siguiente.
+                </p>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium">
+                  Horario de entrega
+                </label>
+
+                <select
+                  value={scheduledTime}
+                  onChange={(e) => setScheduledTime(e.target.value)}
+                  className="w-full rounded-lg border p-2"
+                >
+                  <option value="">
+                    Seleccionar horario
+                  </option>
+
+                  {timeSlots.map((time) => (
+                    <option key={time} value={time}>
+                      {time} hrs
+                    </option>
+                  ))}
+                </select>
+
+                <p className="mt-1 text-xs text-slate-500">
+                  Horarios disponibles entre 14:00 y 18:30 hrs.
+                </p>
+              </div>
+            </div>
+          </div>
+
+
+
+
+
           <div className="mt-5">
             <label className="mb-1 block text-sm font-medium">Comentario para el vendedor</label>
             <textarea
@@ -239,7 +356,7 @@ export default function CatalogClient({ products, user }) {
             <p className="mt-3 text-lg font-bold">Total estimado: {formatPrice(total)}</p>
           </div>
 
-         
+
 
           <button
             onClick={submitOrder}

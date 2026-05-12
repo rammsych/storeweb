@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard,
+  CalendarDays,
   Package,
   Users,
   ArrowLeft,
@@ -11,9 +11,9 @@ import {
 
 const menuItems = [
   {
-    label: 'Dashboard',
+    label: 'Pedidos',
     href: '/admin',
-    icon: LayoutDashboard,
+    icon: CalendarDays,
   },
   {
     label: 'Productos',
@@ -66,14 +66,7 @@ export default function AdminShell({ children }) {
               );
             })}
 
-{/* 
-            <Link
-              href="/catalog"
-              className="flex flex-col items-center justify-center rounded-2xl py-2 text-xs font-bold text-slate-500"
-            >
-              <ArrowLeft className="mb-1 h-5 w-5" />
-              Volver
-            </Link> */}
+
 
 
 
