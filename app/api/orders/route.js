@@ -33,6 +33,10 @@ export async function POST(request) {
 
 
     if (deliveryType === 'PROGRAMADO') {
+
+
+
+
       if (!scheduledDeliveryDate || !scheduledDeliveryTime) {
         return NextResponse.json(
           { error: 'Debes indicar fecha y horario para el pedido programado' },
@@ -40,13 +44,32 @@ export async function POST(request) {
         );
       }
 
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(0, 0, 0, 0);
+    
 
-      const selectedDate = new Date(`${scheduledDeliveryDate}T00:00:00`);
+      const getChileDateString = (date) => {
+        return new Intl.DateTimeFormat('en-CA', {
+          timeZone: 'America/Santiago',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        }).format(date);
+      };
 
-      if (selectedDate < tomorrow) {
+      const now = new Date();
+
+      const chileTodayString = getChileDateString(now);
+
+      const chileToday = new Date(`${chileTodayString}T00:00:00`);
+
+      chileToday.setDate(chileToday.getDate() + 1);
+
+      const year = chileToday.getFullYear();
+      const month = String(chileToday.getMonth() + 1).padStart(2, '0');
+      const day = String(chileToday.getDate()).padStart(2, '0');
+
+      const minAllowedDate = `${year}-${month}-${day}`;
+
+      if (scheduledDeliveryDate < minAllowedDate) {
         return NextResponse.json(
           { error: 'La fecha debe ser desde el día siguiente' },
           { status: 400 }
