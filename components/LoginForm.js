@@ -67,6 +67,7 @@ export default function LoginForm() {
           Clave
         </label>
 
+        {/* <div className="flex items-center border-b border-white/85"> */}
         <div className="flex items-center border-b border-white/85">
           <input
             name="password"
@@ -74,7 +75,7 @@ export default function LoginForm() {
             required
             placeholder="Ingresa tu clave"
             autoComplete="new-password"
-            className="login-bank-input flex-1"
+            className="login-bank-input-no-border flex-1"
           />
 
           <button
@@ -83,7 +84,8 @@ export default function LoginForm() {
             className="ml-3 flex h-9 w-9 items-center justify-center text-white/80 hover:text-white"
             aria-label="Mostrar clave"
           >
-            {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
+            {/* {showPassword ? <EyeOff size={22} /> : <Eye size={22} />} */}
+            {showPassword ? <EyeOff size={19} strokeWidth={1.6} /> : <Eye size={19} strokeWidth={1.6} />}
           </button>
         </div>
       </div>

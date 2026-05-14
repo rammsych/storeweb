@@ -61,7 +61,7 @@ export default function RegisterPage() {
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-10">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
-        <h1 className="mb-2 text-3xl font-bold text-green-800">Crear cuenta</h1>
+        <h1 className="mb-2 text-3xl font-bold text-[#ff6b2c]">Crear cuenta</h1>
         <p className="mb-6 text-sm text-gray-600">
           Registro básico para el prototipo
         </p>
@@ -145,7 +145,7 @@ export default function RegisterPage() {
           />
 
           <button
-            className="w-full rounded-lg bg-green-700 p-2 text-white"
+            className="w-full rounded-lg bg-[#ff6b2c] p-3 font-semibold text-white shadow-md transition hover:bg-[#ff5a14]"
             type="submit"
           >
             Crear cuenta
@@ -154,7 +154,7 @@ export default function RegisterPage() {
 
         <p className="mt-5 text-sm text-gray-600">
           ¿Ya tienes cuenta?{' '}
-          <Link href="/login" className="font-semibold text-green-700">
+          <Link href="/login" className="font-semibold text-[#ff6b2c]">
             Iniciar sesión
           </Link>
         </p>
