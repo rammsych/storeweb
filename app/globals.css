@@ -30,8 +30,12 @@ button {
   box-shadow: none !important;
 }
 
-.login-bank-input::placeholder {
+/* .login-bank-input::placeholder {
   color: rgba(255,255,255,.58) !important;
+} */
+
+.login-bank-input::placeholder {
+  color: rgba(255,255,255,.68) !important;
 }
 
 .login-bank-input:focus {
@@ -43,6 +47,37 @@ button {
 .login-bank-input:-webkit-autofill,
 .login-bank-input:-webkit-autofill:hover,
 .login-bank-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: white !important;
+  caret-color: white !important;
+  transition: background-color 9999s ease-in-out 0s !important;
+}
+
+
+
+.login-bank-input-no-border {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 10px 0 12px 0 !important;
+  color: white !important;
+  font-size: 22px !important;
+  font-weight: 300 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.login-bank-input-no-border::placeholder {
+  color: rgba(255,255,255,.68) !important;
+}
+
+.login-bank-input-no-border:focus {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.login-bank-input-no-border:-webkit-autofill,
+.login-bank-input-no-border:-webkit-autofill:hover,
+.login-bank-input-no-border:-webkit-autofill:focus {
   -webkit-text-fill-color: white !important;
   caret-color: white !important;
   transition: background-color 9999s ease-in-out 0s !important;
