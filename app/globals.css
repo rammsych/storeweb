@@ -13,3 +13,37 @@ input, textarea {
 button {
   @apply transition;
 }
+
+
+
+
+.login-bank-input {
+  background: transparent !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(255,255,255,.85) !important;
+  border-radius: 0 !important;
+  padding: 10px 0 12px 0 !important;
+  color: white !important;
+  font-size: 22px !important;
+  font-weight: 300 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.login-bank-input::placeholder {
+  color: rgba(255,255,255,.58) !important;
+}
+
+.login-bank-input:focus {
+  background: transparent !important;
+  border-bottom-color: white !important;
+  box-shadow: none !important;
+}
+
+.login-bank-input:-webkit-autofill,
+.login-bank-input:-webkit-autofill:hover,
+.login-bank-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: white !important;
+  caret-color: white !important;
+  transition: background-color 9999s ease-in-out 0s !important;
+}
