@@ -22,11 +22,17 @@ export default function CatalogClient({ products, user }) {
   });
 
 
+  const getMinScheduledDate = () => {
+    const now = new Date();
+    const minDate = new Date(now);
 
-  const getTomorrowDate = () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split('T')[0];
+    minDate.setDate(now.getDate() + 1);
+
+    const year = minDate.getFullYear();
+    const month = String(minDate.getMonth() + 1).padStart(2, '0');
+    const day = String(minDate.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
   };
 
   const timeSlots = [
@@ -141,12 +147,12 @@ export default function CatalogClient({ products, user }) {
       return;
     }
 
-    const tomorrow = getTomorrowDate();
+    const minScheduledDate = getMinScheduledDate();
 
-    if (scheduledDate < tomorrow) {
+    if (scheduledDate < minScheduledDate) {
       setToast({
         open: true,
-        message: 'Solo puedes seleccionar desde el día siguiente.',
+        message: 'Solo puedes seleccionar fechas desde el próximo día disponible.',
         type: 'error',
       });
       return;
@@ -341,7 +347,7 @@ export default function CatalogClient({ products, user }) {
 
                 <input
                   type="date"
-                  min={getTomorrowDate()}
+                  min={getMinScheduledDate()}
                   value={scheduledDate}
                   onChange={(e) => setScheduledDate(e.target.value)}
                   className="w-full rounded-lg border p-2"
