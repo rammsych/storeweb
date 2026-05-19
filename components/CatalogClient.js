@@ -23,6 +23,7 @@ export default function CatalogClient({ products, user }) {
 
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('todas');
+  const [lastOrderForWhatsApp, setLastOrderForWhatsApp] = useState(null);
 
   const categories = [
     { id: 'todas', label: 'Todas', icon: '🛒' },
@@ -172,14 +173,22 @@ export default function CatalogClient({ products, user }) {
   const sendOrderToWhatsApp = (order) => {
     const phone = process.env.NEXT_PUBLIC_SELLER_WHATSAPP;
 
+    console.log('WHATSAPP PHONE:', phone);
+    console.log('ORDER WHATSAPP:', order);
+
+    if (!phone) {
+      alert('No está configurado NEXT_PUBLIC_SELLER_WHATSAPP');
+      return;
+    }
+
     const message = buildWhatsAppMessage(order);
 
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 
+    console.log('WHATSAPP URL:', url);
+
     window.open(url, '_blank');
   };
-
-
 
 
 
@@ -274,7 +283,7 @@ export default function CatalogClient({ products, user }) {
     setScheduledDate('');
     setScheduledTime('');
 
-    sendOrderToWhatsApp({
+    setLastOrderForWhatsApp({
       customerName: user.name,
       customerEmail: user.email,
       items: cart,
@@ -553,6 +562,23 @@ export default function CatalogClient({ products, user }) {
 
             {sending ? 'Enviando solicitud...' : 'Enviar solicitud de compra'}
           </button>
+
+          {lastOrderForWhatsApp ? (
+            <button
+              type="button"
+              onClick={() => sendOrderToWhatsApp(lastOrderForWhatsApp)}
+              className="mt-3 w-full rounded-lg bg-green-600 px-4 py-3 font-semibold text-white hover:bg-green-700"
+            >
+              Enviar pedido por WhatsApp al vendedor
+            </button>
+          ) : null}
+
+
+
+
+
+
+
         </aside>
       </div>
 
