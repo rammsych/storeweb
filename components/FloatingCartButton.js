@@ -21,7 +21,7 @@ export default function FloatingCartButton({ itemCount }) {
 const styles = {
   button: {
     position: 'fixed',
-    bottom: '20px',
+    bottom: '76px',
     right: '20px',
     width: '60px',
     height: '60px',
