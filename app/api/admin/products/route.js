@@ -21,12 +21,13 @@ export async function POST(request) {
     const description = String(body.description || '').trim();
     const price = Number(body.price || 0);
     const unitType = String(body.unitType || '').trim();
+    const categoryId = String(body.categoryId || '').trim();
     const imageUrl = String(body.imageUrl || '').trim();
     const isActive = Boolean(body.isActive);
 
-    if (!name || !price || !unitType) {
+    if (!name || !price || !unitType || !categoryId) {
       return NextResponse.json(
-        { error: 'Nombre, precio y unidad son obligatorios' },
+        { error: 'Nombre, precio, unidad y categoría son obligatorios' },
         { status: 400 }
       );
     }
@@ -37,6 +38,7 @@ export async function POST(request) {
         description: description || null,
         price,
         unitType,
+        categoryId,
         imageUrl: imageUrl || null,
         isActive,
       },

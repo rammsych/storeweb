@@ -36,7 +36,7 @@ export default function AdminShell({ children }) {
         <aside className="hidden w-64 shrink-0 rounded-3xl bg-white p-4 shadow-sm md:block">
           <div className="mb-6">
             <h1 className="text-xl font-black text-slate-900">
-              STOREWEB
+              Bitrineo
             </h1>
 
             <p className="text-sm text-slate-500">

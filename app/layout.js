@@ -1,8 +1,12 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'Verdulería Prototipo',
-  description: 'Prototipo de verdulería con login, catálogo y solicitud por correo.',
+  title: 'Bitrineo',
+  description: 'Comercio digital inteligente',
+
+  icons: {
+    icon: '/icon.png',
+  },
 };
 
 export default function RootLayout({ children }) {

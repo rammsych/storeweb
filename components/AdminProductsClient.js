@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect  } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import MobileToast from '@/components/MobileToast';
 import AdminShell from '@/components/AdminShell';
@@ -14,9 +14,17 @@ export default function AdminProductsClient({ products: initialProducts, user })
     description: '',
     price: '',
     unitType: 'KG',
+    categoryId: 'verduras',
     imageUrl: '',
     isActive: true,
   });
+
+  const categories = [
+    { id: 'verduras', label: 'Verduras' },
+    { id: 'frutas', label: 'Frutas' },
+    { id: 'limpieza', label: 'Limpieza' },
+    { id: 'abarrotes', label: 'Abarrotes' },
+  ];
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -31,6 +39,7 @@ export default function AdminProductsClient({ products: initialProducts, user })
     description: '',
     price: '',
     unitType: 'KG',
+    categoryId: 'verduras',
     imageUrl: '',
     isActive: true,
   });
@@ -47,7 +56,7 @@ export default function AdminProductsClient({ products: initialProducts, user })
     message: '',
     type: 'success',
   });
-  
+
 
 
 
@@ -148,7 +157,7 @@ export default function AdminProductsClient({ products: initialProducts, user })
         return;
       }
 
-  
+
 
       if (selectedImage) {
         setUploadingImage(true);
@@ -179,6 +188,7 @@ export default function AdminProductsClient({ products: initialProducts, user })
         description: '',
         price: '',
         unitType: 'KG',
+        categoryId: 'verduras',
         imageUrl: '',
         isActive: true,
       });
@@ -227,19 +237,6 @@ export default function AdminProductsClient({ products: initialProducts, user })
     }
   }
 
-  // const openEditModal = (product) => {
-  //   setEditingProduct(product);
-  //   setEditForm({
-  //     name: product.name || '',
-  //     description: product.description || '',
-  //     price: product.price || '',
-  //     unitType: product.unitType || 'KG',
-  //     imageUrl: product.imageUrl || '',
-  //     isActive: product.isActive ?? true,
-  //   });
-  //   setIsEditModalOpen(true);
-  // };
-
   const openEditModal = (product) => {
     setEditingProduct(product);
     setEditForm({
@@ -247,6 +244,7 @@ export default function AdminProductsClient({ products: initialProducts, user })
       description: product.description || '',
       price: product.price || '',
       unitType: product.unitType || 'KG',
+      categoryId: product.categoryId || 'verduras',
       imageUrl: product.imageUrl || '',
       isActive: product.isActive ?? true,
     });
@@ -288,6 +286,7 @@ export default function AdminProductsClient({ products: initialProducts, user })
           description: editForm.description,
           price: Number(editForm.price),
           unitType: editForm.unitType,
+          categoryId: editForm.categoryId,
           imageUrl: finalImageUrl,
           isActive: editForm.isActive,
         }),
@@ -313,14 +312,15 @@ export default function AdminProductsClient({ products: initialProducts, user })
         current.map((p) =>
           p.id === editingProduct.id
             ? {
-                ...p,
-                name: editForm.name,
-                description: editForm.description,
-                price: Number(editForm.price),
-                unitType: editForm.unitType,
-                imageUrl: finalImageUrl,
-                isActive: editForm.isActive,
-              }
+              ...p,
+              name: editForm.name,
+              description: editForm.description,
+              price: Number(editForm.price),
+              unitType: editForm.unitType,
+              categoryId: editForm.categoryId,
+              imageUrl: finalImageUrl,
+              isActive: editForm.isActive,
+            }
             : p
         )
       );
@@ -343,168 +343,182 @@ export default function AdminProductsClient({ products: initialProducts, user })
     }
   };
 
-  
+
 
   return (
     <AdminShell>
-    <main className="mx-auto max-w-6xl px-4 py-8">
+      <main className="mx-auto max-w-6xl px-4 py-8">
 
-      <MobileToast
-      open={toast.open}
-      message={toast.message}
-      type={toast.type}
-      onClose={() => setToast((current) => ({ ...current, open: false }))}
-    />
+        <MobileToast
+          open={toast.open}
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast((current) => ({ ...current, open: false }))}
+        />
 
-      <div className="mb-6 rounded-2xl bg-white p-6 shadow">
-        <h1 className="text-3xl font-bold text-green-800">Panel Administrador</h1>
-        <p className="text-slate-600">Hola {user.name}, aquí puedes administrar productos.</p>
-      </div>
+        <div className="mb-6 rounded-2xl bg-white p-6 shadow">
+          <h1 className="text-3xl font-bold text-green-800">Panel Administrador</h1>
+          <p className="text-slate-600">Hola {user.name}, aquí puedes administrar productos.</p>
+        </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-        <h2>Administración de Productos</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+          <h2>Administración de Productos</h2>
 
-        <button
-          onClick={() => router.push('/catalog')}
-          style={{
-            padding: '8px 14px',
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            border: '1px solid #ddd',
-            borderRadius: '6px',
-            cursor: 'pointer',
-          }}
-        >
-          ← Volver al Catálogo
-        </button>
-      </div>
+          <button
+            onClick={() => router.push('/catalog')}
+            style={{
+              padding: '8px 14px',
+              backgroundColor: '#f5f5f5',
+              color: '#333',
+              border: '1px solid #ddd',
+              borderRadius: '6px',
+              cursor: 'pointer',
+            }}
+          >
+            ← Volver al Catálogo
+          </button>
+        </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_1.2fr]">
-        <section className="rounded-2xl bg-white p-6 shadow">
-          <h2 className="mb-4 text-2xl font-bold text-green-800">Crear producto</h2>
+        <div className="grid gap-6 xl:grid-cols-[1fr_1.2fr]">
+          <section className="rounded-2xl bg-white p-6 shadow">
+            <h2 className="mb-4 text-2xl font-bold text-green-800">Crear producto</h2>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <input
-              className="w-full rounded-lg border p-2"
-              placeholder="Nombre"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <input
+                className="w-full rounded-lg border p-2"
+                placeholder="Nombre"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
 
-            <textarea
-              className="w-full rounded-lg border p-2"
-              placeholder="Descripción"
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-            />
+              <textarea
+                className="w-full rounded-lg border p-2"
+                placeholder="Descripción"
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+              />
 
-            <input
-              className="w-full rounded-lg border p-2"
-              placeholder="Precio"
-              type="number"
-              step="0.01"
-              value={form.price}
-              onChange={(e) => setForm({ ...form, price: e.target.value })}
-            />
+              <input
+                className="w-full rounded-lg border p-2"
+                placeholder="Precio"
+                type="number"
+                step="0.01"
+                value={form.price}
+                onChange={(e) => setForm({ ...form, price: e.target.value })}
+              />
 
-            <select
-              className="w-full rounded-lg border p-2"
-              value={form.unitType}
-              onChange={(e) => setForm({ ...form, unitType: e.target.value })}
-            >
-              <option value="KG">KG</option>
-              <option value="UNIT">UNIT</option>
-              <option value="BUNDLE">BUNDLE</option>
-            </select>
+              <select
+                className="w-full rounded-lg border p-2"
+                value={form.unitType}
+                onChange={(e) => setForm({ ...form, unitType: e.target.value })}
+              >
+                <option value="KG">KG</option>
+                <option value="UNIT">UNIT</option>
+                <option value="BUNDLE">BUNDLE</option>
+              </select>
 
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-700">
-                Imagen del producto
-              </label>
+              <select
+                className="w-full rounded-lg border p-2"
+                value={form.categoryId}
+                onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+              >
+                <option value="verduras">Verduras</option>
+                <option value="frutas">Frutas</option>
+                <option value="limpieza">Limpieza</option>
+                <option value="abarrotes">Abarrotes</option>
+              </select>
 
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <label className="cursor-pointer rounded-lg bg-sky-500 px-4 py-2 text-center text-white hover:bg-sky-600">
-                  Tomar foto
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    onChange={handleImageChange}
-                    className="hidden"
-                  />
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-700">
+                  Imagen del producto
                 </label>
 
-                <label className="cursor-pointer rounded-lg bg-slate-600 px-4 py-2 text-center text-white hover:bg-slate-700">
-                  Elegir imagen
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="hidden"
-                  />
-                </label>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <label className="cursor-pointer rounded-lg bg-sky-500 px-4 py-2 text-center text-white hover:bg-sky-600">
+                    Tomar foto
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                  </label>
+
+                  <label className="cursor-pointer rounded-lg bg-slate-600 px-4 py-2 text-center text-white hover:bg-slate-700">
+                    Elegir imagen
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                {imagePreview && (
+                  <div className="mt-2">
+                    <img
+                      src={imagePreview}
+                      alt="Vista previa"
+                      className="h-32 w-32 rounded-lg border object-cover"
+                    />
+                  </div>
+                )}
+
+                {uploadingImage && (
+                  <p className="text-sm text-slate-500">Subiendo imagen...</p>
+                )}
               </div>
 
-              {imagePreview && (
-                <div className="mt-2">
-                  <img
-                    src={imagePreview}
-                    alt="Vista previa"
-                    className="h-32 w-32 rounded-lg border object-cover"
-                  />
-                </div>
-              )}
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={form.isActive}
+                  onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
+                />
+                Producto activo
+              </label>
 
-              {uploadingImage && (
-                <p className="text-sm text-slate-500">Subiendo imagen...</p>
-              )}
-            </div>
-
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={form.isActive}
-                onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
-              />
-              Producto activo
-            </label>
-
-           <button
-            className="w-full rounded-lg bg-green-700 p-2 text-white disabled:opacity-60"
-            type="submit"
-            disabled={saving || uploadingImage}
-          >
-            {saving || uploadingImage ? 'Guardando...' : 'Crear producto'}
-          </button>
-          </form>
-
-          {message ? <p className="mt-4 text-sm font-medium">{message}</p> : null}
-        </section>
-
-        <section className="rounded-2xl bg-white p-6 shadow">
-          <h2 className="mb-4 text-2xl font-bold text-green-800">Listado de productos</h2>
-
-          <div className="space-y-4">
-            {products.map((product) => (
-              <div
-                key={product.id}
-                className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm"
+              <button
+                className="w-full rounded-lg bg-green-700 p-2 text-white disabled:opacity-60"
+                type="submit"
+                disabled={saving || uploadingImage}
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-lg font-semibold">{product.name}</p>
-                    <p className="text-sm text-slate-600">{product.description}</p>
-                    <p className="mt-2 font-medium">${product.price}</p>
-                    <p className="text-sm text-slate-500">Unidad: {product.unitType}</p>
-                    <p className="text-sm">
-                      Estado:{' '}
-                      <span className={product.isActive ? 'text-green-700' : 'text-red-600'}>
-                        {product.isActive ? 'Activo' : 'Inactivo'}
-                      </span>
-                    </p>
-                  </div>
+                {saving || uploadingImage ? 'Guardando...' : 'Crear producto'}
+              </button>
+            </form>
 
-                  {/* <button
+            {message ? <p className="mt-4 text-sm font-medium">{message}</p> : null}
+          </section>
+
+          <section className="rounded-2xl bg-white p-6 shadow">
+            <h2 className="mb-4 text-2xl font-bold text-green-800">Listado de productos</h2>
+
+            <div className="space-y-4">
+              {products.map((product) => (
+                <div
+                  key={product.id}
+                  className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-lg font-semibold">{product.name}</p>
+                      <p className="text-sm text-slate-600">{product.description}</p>
+                      <p className="mt-2 font-medium">${product.price}</p>
+                      <p className="text-sm text-slate-500">Unidad: {product.unitType}</p>
+                      <p className="text-sm text-slate-500">
+                        Categoría: {product.categoryId || 'Sin categoría'}
+                      </p>
+                      <p className="text-sm">
+                        Estado:{' '}
+                        <span className={product.isActive ? 'text-green-700' : 'text-red-600'}>
+                          {product.isActive ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </p>
+                    </div>
+
+                    {/* <button
                     onClick={() => toggleProduct(product.id, product.isActive)}
                     className={`rounded-lg px-4 py-2 text-white ${
                       product.isActive ? 'bg-red-600' : 'bg-green-700'
@@ -514,7 +528,7 @@ export default function AdminProductsClient({ products: initialProducts, user })
                   </button> */}
 
 
-                 {/* <div className="flex gap-2">
+                    {/* <div className="flex gap-2">
                     <button
                       onClick={() => openEditModal(product)}
                       className="rounded bg-blue-600 px-3 py-1 text-white"
@@ -532,160 +546,171 @@ export default function AdminProductsClient({ products: initialProducts, user })
                     </button>
                   </div> */}
 
-                 <div className="flex flex-col gap-2 sm:flex-row">
-  <button
-    onClick={() => openEditModal(product)}
-    className="rounded bg-sky-500 px-3 py-1 text-white hover:bg-sky-600"
-  >
-    Editar
-  </button>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <button
+                        onClick={() => openEditModal(product)}
+                        className="rounded bg-sky-500 px-3 py-1 text-white hover:bg-sky-600"
+                      >
+                        Editar
+                      </button>
 
-  <button
-    onClick={() => toggleProduct(product.id, product.isActive)}
-    className={`rounded px-3 py-1 text-white ${
-      product.isActive
-        ? 'bg-orange-500 hover:bg-orange-600'
-        : 'bg-green-600 hover:bg-green-700'
-    }`}
-  >
-    {product.isActive ? 'Deshabilitar' : 'Habilitar'}
-  </button>
-</div>
-
+                      <button
+                        onClick={() => toggleProduct(product.id, product.isActive)}
+                        className={`rounded px-3 py-1 text-white ${product.isActive
+                          ? 'bg-orange-500 hover:bg-orange-600'
+                          : 'bg-green-600 hover:bg-green-700'
+                          }`}
+                      >
+                        {product.isActive ? 'Deshabilitar' : 'Habilitar'}
+                      </button>
+                    </div>
 
 
 
+
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {isEditModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+              <div className="w-full max-w-lg rounded-xl bg-white p-4 shadow-xl">
+                <h2 className="mb-4 text-lg font-bold">Editar producto</h2>
+
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    name="name"
+                    value={editForm.name}
+                    onChange={handleEditChange}
+                    placeholder="Nombre"
+                    className="w-full border rounded px-3 py-2"
+                  />
+
+                  <textarea
+                    name="description"
+                    value={editForm.description}
+                    onChange={handleEditChange}
+                    placeholder="Descripción"
+                    className="w-full border rounded px-3 py-2"
+                  />
+
+                  <input
+                    type="number"
+                    name="price"
+                    value={editForm.price}
+                    onChange={handleEditChange}
+                    placeholder="Precio"
+                    className="w-full border rounded px-3 py-2"
+                  />
+
+                  <select
+                    name="unitType"
+                    value={editForm.unitType}
+                    onChange={handleEditChange}
+                    className="w-full rounded border px-3 py-2"
+                  >
+                    <option value="KG">KG</option>
+                    <option value="UNIT">UNIT</option>
+                    <option value="BUNDLE">BUNDLE</option>
+                  </select>
+
+                  <select
+                    name="categoryId"
+                    value={editForm.categoryId}
+                    onChange={handleEditChange}
+                    className="w-full rounded border px-3 py-2"
+                  >
+                    <option value="verduras">Verduras</option>
+                    <option value="frutas">Frutas</option>
+                    <option value="limpieza">Limpieza</option>
+                    <option value="abarrotes">Abarrotes</option>
+                  </select>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-slate-700">
+                      Imagen del producto
+                    </label>
+
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <label className="cursor-pointer rounded-lg bg-sky-500 px-4 py-2 text-center text-white hover:bg-sky-600">
+                        Tomar foto
+                        <input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          onChange={handleEditImageChange}
+                          className="hidden"
+                        />
+                      </label>
+
+                      <label className="cursor-pointer rounded-lg bg-slate-600 px-4 py-2 text-center text-white hover:bg-slate-700">
+                        Elegir imagen
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleEditImageChange}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+
+                    {editImagePreview && (
+                      <div className="mt-2">
+                        <img
+                          src={editImagePreview}
+                          alt="Vista previa"
+                          className="h-32 w-32 rounded-lg border object-cover"
+                        />
+                      </div>
+                    )}
+
+                    {uploadingEditImage && (
+                      <p className="text-sm text-slate-500">Subiendo imagen...</p>
+                    )}
+                  </div>
+
+
+
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      name="isActive"
+                      checked={editForm.isActive}
+                      onChange={handleEditChange}
+                    />
+                    Activo
+                  </label>
+                </div>
+
+                <div className="mt-4 flex gap-2">
+                  <button
+                    onClick={() => {
+                      setIsEditModalOpen(false);
+                      setEditingProduct(null);
+                      setEditSelectedImage(null);
+                      setEditImagePreview('');
+                    }}
+                    className="px-4 py-2 rounded border"
+                  >
+                    Cancelar
+                  </button>
+
+                  <button
+                    onClick={handleUpdateProduct}
+                    disabled={isSavingEdit || uploadingEditImage}
+                    className="px-4 py-2 rounded bg-green-600 text-white disabled:opacity-60"
+                  >
+                    {isSavingEdit || uploadingEditImage ? 'Guardando...' : 'Guardar cambios'}
+                  </button>
                 </div>
               </div>
-            ))}
-          </div>
-        </section>
-
-        {isEditModalOpen && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-    <div className="w-full max-w-lg rounded-xl bg-white p-4 shadow-xl">
-      <h2 className="mb-4 text-lg font-bold">Editar producto</h2>
-
-      <div className="space-y-3">
-        <input
-          type="text"
-          name="name"
-          value={editForm.name}
-          onChange={handleEditChange}
-          placeholder="Nombre"
-          className="w-full border rounded px-3 py-2"
-        />
-
-        <textarea
-          name="description"
-          value={editForm.description}
-          onChange={handleEditChange}
-          placeholder="Descripción"
-          className="w-full border rounded px-3 py-2"
-        />  
-
-        <input
-          type="number"
-          name="price"
-          value={editForm.price}
-          onChange={handleEditChange}
-          placeholder="Precio"
-          className="w-full border rounded px-3 py-2"
-        />
-
-        <select
-          name="unitType"
-          value={editForm.unitType}
-          onChange={handleEditChange}
-          className="w-full rounded border px-3 py-2"
-        >
-          <option value="KG">KG</option>
-          <option value="UNIT">UNIT</option>
-          <option value="BUNDLE">BUNDLE</option>
-        </select>
-
-       <div className="space-y-2">
-          <label className="block text-sm font-medium text-slate-700">
-            Imagen del producto
-          </label>
-
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <label className="cursor-pointer rounded-lg bg-sky-500 px-4 py-2 text-center text-white hover:bg-sky-600">
-              Tomar foto
-              <input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={handleEditImageChange}
-                className="hidden"
-              />
-            </label>
-
-            <label className="cursor-pointer rounded-lg bg-slate-600 px-4 py-2 text-center text-white hover:bg-slate-700">
-              Elegir imagen
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleEditImageChange}
-                className="hidden"
-              />
-            </label>
-          </div>
-
-          {editImagePreview && (
-            <div className="mt-2">
-              <img
-                src={editImagePreview}
-                alt="Vista previa"
-                className="h-32 w-32 rounded-lg border object-cover"
-              />
             </div>
           )}
-
-          {uploadingEditImage && (
-            <p className="text-sm text-slate-500">Subiendo imagen...</p>
-          )}
         </div>
-
-  
-
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            name="isActive"
-            checked={editForm.isActive}
-            onChange={handleEditChange}
-          />
-          Activo
-        </label>
-      </div>
-
-      <div className="mt-4 flex gap-2">
-        <button
-          onClick={() => {
-            setIsEditModalOpen(false);
-            setEditingProduct(null);
-            setEditSelectedImage(null);
-            setEditImagePreview('');
-          }}
-          className="px-4 py-2 rounded border"
-        >
-          Cancelar
-        </button>
-
-        <button
-          onClick={handleUpdateProduct}
-          disabled={isSavingEdit || uploadingEditImage}
-          className="px-4 py-2 rounded bg-green-600 text-white disabled:opacity-60"
-        >
-          {isSavingEdit || uploadingEditImage ? 'Guardando...' : 'Guardar cambios'}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-      </div>
-    </main>
+      </main>
     </AdminShell>
   );
 }
