@@ -21,6 +21,17 @@ export default function CatalogClient({ products, user }) {
     type: 'success',
   });
 
+  const [searchText, setSearchText] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('todas');
+
+  const categories = [
+    { id: 'todas', label: 'Todas', icon: '🛒' },
+    { id: 'verduras', label: 'Verduras', icon: '🥬' },
+    { id: 'frutas', label: 'Frutas', icon: '🍎' },
+    { id: 'limpieza', label: 'Limpieza', icon: '🧴' },
+    { id: 'abarrotes', label: 'Abarrotes', icon: '🥫' },
+  ];
+
 
   const getMinScheduledDate = () => {
     const now = new Date();
@@ -127,6 +138,57 @@ export default function CatalogClient({ products, user }) {
     [cart]
   );
 
+
+
+
+  const buildWhatsAppMessage = (order) => {
+    const productsText = order.items
+      .map(
+        (item) =>
+          `- ${item.productName} x ${item.quantity}`
+      )
+      .join('\n');
+
+    return `
+    🛒 Nuevo pedido STOREWEB
+
+    Cliente: ${order.customerName}
+
+    Email: ${order.customerEmail}
+
+    Productos:
+    ${productsText}
+
+    Total: $${order.total}
+
+    Entrega:
+    ${order.deliveryDate} - ${order.deliveryTime}
+
+    Comentario:
+    ${order.note || 'Sin comentarios'}
+    `;
+  };
+
+  const sendOrderToWhatsApp = (order) => {
+    const phone = process.env.NEXT_PUBLIC_SELLER_WHATSAPP;
+
+    const message = buildWhatsAppMessage(order);
+
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+
+    window.open(url, '_blank');
+  };
+
+
+
+
+
+
+
+
+
+
+
   async function submitOrder() {
     if (cart.length === 0) {
       setToast({
@@ -212,7 +274,15 @@ export default function CatalogClient({ products, user }) {
     setScheduledDate('');
     setScheduledTime('');
 
-
+    sendOrderToWhatsApp({
+      customerName: user.name,
+      customerEmail: user.email,
+      items: cart,
+      total: total,
+      deliveryDate: scheduledDate,
+      deliveryTime: scheduledTime,
+      note: note,
+    });
 
     setToast({
       open: true,
@@ -220,6 +290,24 @@ export default function CatalogClient({ products, user }) {
       type: 'success',
     });
   }
+
+  const filteredProducts = products.filter((product) => {
+    const text = searchText.toLowerCase().trim();
+
+    const productCategory = product.categoryId?.toLowerCase();
+
+    const matchesText =
+      text === '' ||
+      product.name?.toLowerCase().includes(text) ||
+      product.description?.toLowerCase().includes(text) ||
+      productCategory?.includes(text);
+
+    const matchesCategory =
+      selectedCategory === 'todas' ||
+      productCategory === selectedCategory;
+
+    return matchesText && matchesCategory;
+  });
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
@@ -230,6 +318,57 @@ export default function CatalogClient({ products, user }) {
         onClose={() => setToast((current) => ({ ...current, open: false }))}
       />
       <div className="mb-6 flex flex-col gap-4 rounded-2xl bg-white p-6 shadow md:flex-row md:items-center md:justify-between">
+
+
+
+        <div style={styles.searchSection}>
+          <div style={styles.searchRow}>
+            <div style={styles.searchBox}>
+              <span style={styles.searchIcon}>🔍</span>
+              <input
+                type="text"
+                placeholder="Buscar productos..."
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                style={styles.searchInput}
+              />
+            </div>
+
+            <button
+              type="button"
+              style={styles.filterButton}
+              onClick={() => {
+                setSearchText('');
+                setSelectedCategory('todas');
+              }}
+            >
+              ⚙️
+            </button>
+          </div>
+
+          <div style={styles.categoryRow}>
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                type="button"
+                onClick={() => setSelectedCategory(category.id)}
+                style={{
+                  ...styles.categoryButton,
+                  ...(selectedCategory === category.id
+                    ? styles.categoryButtonActive
+                    : {}),
+                }}
+              >
+                <span>{category.icon}</span>
+                {category.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+
+
+
         <div>
           <h1 className="text-3xl font-bold text-green-800">Catálogo de verdulería</h1>
           <p className="text-slate-600">
@@ -252,7 +391,8 @@ export default function CatalogClient({ products, user }) {
 
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {products.map((product) => (
+
+          {filteredProducts.map((product) => (
             <article key={product.id} className="overflow-hidden rounded-2xl bg-white shadow">
               <img
                 src={product.imageUrl || '/placeholder-product.png'}
@@ -302,6 +442,8 @@ export default function CatalogClient({ products, user }) {
               </div>
             </article>
           ))}
+
+
         </section>
 
         <aside id="tu-solicitud" className="h-fit rounded-2xl bg-white p-6 shadow">
@@ -427,3 +569,90 @@ export default function CatalogClient({ products, user }) {
     </div>
   );
 }
+
+const styles = {
+  searchSection: {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: '18px',
+    padding: '16px',
+    marginBottom: '18px',
+    boxShadow: '0 8px 24px rgba(15, 23, 42, 0.08)',
+    border: '1px solid #e5e7eb',
+  },
+
+  searchRow: {
+    display: 'flex',
+    gap: '10px',
+    alignItems: 'center',
+    marginBottom: '14px',
+  },
+
+  searchBox: {
+    flex: 1,
+    height: '52px',
+    borderRadius: '14px',
+    border: '1px solid #d1d5db',
+    display: 'flex',
+    alignItems: 'center',
+    padding: '0 14px',
+    backgroundColor: '#f9fafb',
+  },
+
+  searchIcon: {
+    fontSize: '22px',
+    marginRight: '10px',
+    color: '#64748b',
+  },
+
+  searchInput: {
+    width: '100%',
+    border: 'none',
+    outline: 'none',
+    backgroundColor: 'transparent',
+    fontSize: '16px',
+    color: '#0f172a',
+  },
+
+  filterButton: {
+    width: '52px',
+    height: '52px',
+    borderRadius: '50%',
+    border: 'none',
+    backgroundColor: '#dcfce7',
+    color: '#15803d',
+    fontSize: '22px',
+    cursor: 'pointer',
+  },
+
+  categoryRow: {
+    display: 'flex',
+    gap: '10px',
+    overflowX: 'auto',
+    paddingBottom: '4px',
+  },
+
+  categoryButton: {
+    minWidth: '120px',
+    height: '48px',
+    borderRadius: '14px',
+    border: '1px solid #d1d5db',
+    backgroundColor: '#fff',
+    color: '#64748b',
+    fontSize: '15px',
+    fontWeight: 600,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+  },
+
+  categoryButtonActive: {
+    border: '2px solid #16a34a',
+    backgroundColor: '#f0fdf4',
+    color: '#15803d',
+    boxShadow: '0 6px 18px rgba(22, 163, 74, 0.16)',
+  },
+};
