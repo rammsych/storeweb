@@ -455,7 +455,7 @@ export default function CatalogClient({ products, user }) {
 
         </section>
 
-       <aside id="tu-solicitud" className="h-fit rounded-3xl bg-white p-5 shadow-sm">
+        <aside id="tu-solicitud" className="h-fit rounded-3xl bg-white p-5 pb-28 shadow-sm md:pb-5">
           <div className="mb-5 flex items-center justify-between">
             <h2 className="text-xl font-semibold text-green-800">
               Tu pedido ({itemCount})
@@ -623,7 +623,7 @@ export default function CatalogClient({ products, user }) {
           <button
             onClick={submitOrder}
             disabled={sending}
-            className="mt-5 w-full rounded-lg bg-orange-500 px-4 py-3 font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+            className="mt-5 w-full rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-orange-600 disabled:opacity-60"
           >
 
             {sending ? 'Enviando solicitud...' : 'Enviar solicitud de compra'}
@@ -633,7 +633,7 @@ export default function CatalogClient({ products, user }) {
             <button
               type="button"
               onClick={() => sendOrderToWhatsApp(lastOrderForWhatsApp)}
-              className="mt-3 mb-24 w-full rounded-xl bg-green-600 px-4 py-4 text-base font-bold text-white shadow-lg hover:bg-green-700"
+              className="mt-3 w-full rounded-xl bg-green-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-green-700"
             >
               Enviar pedido por WhatsApp al vendedor
             </button>
