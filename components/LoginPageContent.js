@@ -13,7 +13,7 @@ function LoginInner() {
     <main className="relative min-h-screen overflow-hidden">
       <img
         src="/fondo.png"
-        alt="Fondo StoreWeb"
+        alt="Fondo Bitrineo"
         className="absolute inset-0 h-full w-full object-cover"
       />
 

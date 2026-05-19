@@ -27,6 +27,7 @@ export async function PUT(request, { params }) {
         description: body.description,
         price: body.price,
         unitType: body.unitType,
+        categoryId: body.categoryId,
         imageUrl: body.imageUrl,
         isActive: body.isActive,
       },

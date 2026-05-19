@@ -115,7 +115,7 @@ export default function AdminCustomersPage() {
     }
 
     const text = encodeURIComponent(
-      `Hola ${customer.name || ''}, te contactamos desde STOREWEB.`
+      `Hola ${customer.name || ''}, te contactamos desde BITRINEO.`
     );
 
     window.open(`https://wa.me/${cleanPhone}?text=${text}`, '_blank');

@@ -151,7 +151,7 @@ export default function CatalogClient({ products, user }) {
       .join('\n');
 
     return `
-    🛒 Nuevo pedido STOREWEB
+    🛒 Nuevo pedido BITRINEO
 
     Cliente: ${order.customerName}
 
@@ -455,32 +455,90 @@ export default function CatalogClient({ products, user }) {
 
         </section>
 
-        <aside id="tu-solicitud" className="h-fit rounded-2xl bg-white p-6 shadow">
-          <h2 className="mb-4 text-2xl font-bold text-green-800">Tu solicitud</h2>
+       <aside id="tu-solicitud" className="h-fit rounded-3xl bg-white p-5 shadow-sm">
+          <div className="mb-5 flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-green-800">
+              Tu pedido ({itemCount})
+            </h2>
+
+            {cart.length > 0 && (
+              <button
+                onClick={() => setCart([])}
+                className="text-sm font-bold text-red-500 hover:text-red-700"
+              >
+                Vaciar
+              </button>
+            )}
+          </div>
           <div className="space-y-4">
             {cart.length === 0 ? (
               <p className="text-sm text-slate-500">Todavía no agregas productos.</p>
             ) : (
-              cart.map((item) => (
-                <div key={item.productId} className="rounded-xl border border-slate-200 p-3">
-                  <div className="mb-2 flex items-start justify-between gap-2">
-                    <div>
-                      <p className="font-semibold">{item.productName}</p>
-                      <p className="text-sm text-slate-500">{formatPrice(item.unitPrice)} por {getUnitLabel(item.unitType)}</p>
+              cart.map((item) => {
+                const productInfo = products.find((p) => p.id === item.productId);
+
+                return (
+                  <div
+                    key={item.productId}
+                    className="border-b border-slate-100 py-4 last:border-b-0"
+                  >
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={productInfo?.imageUrl || '/placeholder-product.png'}
+                        alt={item.productName}
+                        className="h-14 w-14 rounded-xl object-cover"
+                      />
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <h3 className="text-[15px] font-medium text-slate-800">
+                              {item.productName}
+                            </h3>
+
+                            <p className="mt-1 text-sm text-slate-500">
+                              {formatPrice(item.unitPrice)} / {getUnitLabel(item.unitType)}
+                            </p>
+                          </div>
+
+                          <button
+                            onClick={() => removeItem(item.productId)}
+                            className="text-red-400 hover:text-red-600"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+
+                        <div className="mt-3 flex items-center justify-between gap-3">
+                          <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 bg-white">
+                            <button
+                              onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                              className="h-8 w-9 text-lg font-normal text-slate-600 hover:bg-slate-50"
+                            >
+                              −
+                            </button>
+
+                            <div className="flex h-8 w-9 items-center justify-center text-sm font-normal text-slate-700">
+                              {item.quantity}
+                            </div>
+
+                            <button
+                              onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                              className="h-8 w-9 text-lg font-normal text-slate-600 hover:bg-slate-50"
+                            >
+                              +
+                            </button>
+                          </div>
+
+                          <p className="text-base font-semibold text-slate-900">
+                            {formatPrice(item.quantity * item.unitPrice)}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <button onClick={() => removeItem(item.productId)} className="text-sm font-semibold text-red-600">
-                      Quitar
-                    </button>
                   </div>
-                  <input
-                    type="number"
-                    step="1"
-                    min="1"
-                    value={item.quantity}
-                    onChange={(e) => updateQuantity(item.productId, e.target.value)}
-                  />
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 
@@ -551,7 +609,15 @@ export default function CatalogClient({ products, user }) {
             <p className="text-sm text-slate-600">Cliente</p>
             <p className="font-semibold">{user.name}</p>
             <p className="text-sm text-slate-600">{user.email}</p>
-            <p className="mt-3 text-lg font-bold">Total estimado: {formatPrice(total)}</p>
+            <div className="mt-4 flex items-center justify-between border-t pt-4">
+              <span className="text-lg font-semibold text-slate-600">
+                Total
+              </span>
+
+              <span className="text-3xl font-extrabold text-slate-900">
+                {formatPrice(total)}
+              </span>
+            </div>
           </div>
 
           <button
