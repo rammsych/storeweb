@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Eye,
   Power,
@@ -13,17 +13,23 @@ import {
   Mail,
   Phone,
   X,
+  Loader2,
+  ShieldCheck,
+  Users,
+  CalendarDays,
+  Package,
 } from 'lucide-react';
 import AdminShell from '@/components/AdminShell';
 
 export default function AdminCustomersPage() {
   const [customers, setCustomers] = useState([]);
-  const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [orders, setOrders] = useState([]);
   const [modalMode, setModalMode] = useState('detail');
   const [loading, setLoading] = useState(true);
+  const [ordersLoading, setOrdersLoading] = useState(false);
   const [message, setMessage] = useState('');
 
   const showMessage = (text) => {
@@ -35,7 +41,10 @@ export default function AdminCustomersPage() {
     try {
       setLoading(true);
 
-      const res = await fetch('/api/admin/customers');
+      const res = await fetch('/api/admin/customers', {
+        cache: 'no-store',
+      });
+
       const data = await res.json();
 
       if (!res.ok) {
@@ -43,7 +52,6 @@ export default function AdminCustomersPage() {
       }
 
       setCustomers(data.customers || []);
-      setFilteredCustomers(data.customers || []);
     } catch (error) {
       console.error(error);
       showMessage('Error al cargar clientes');
@@ -52,19 +60,31 @@ export default function AdminCustomersPage() {
     }
   };
 
-  const applySearch = (value, source = customers) => {
-    setSearch(value);
+  useEffect(() => {
+    loadCustomers();
+  }, []);
 
-    const normalized = value.toLowerCase();
+  const filteredCustomers = useMemo(() => {
+    const normalized = search.trim().toLowerCase();
 
-    const result = source.filter((customer) =>
-      `${customer.name || ''} ${customer.email || ''} ${customer.phone || ''} ${customer.address || ''}`
-        .toLowerCase()
-        .includes(normalized)
-    );
+    return customers.filter((customer) => {
+      const matchesSearch =
+        !normalized ||
+        `${customer.name || ''} ${customer.email || ''} ${customer.phone || ''} ${customer.address || ''}`
+          .toLowerCase()
+          .includes(normalized);
 
-    setFilteredCustomers(result);
-  };
+      const matchesStatus =
+        statusFilter === 'all' ||
+        (statusFilter === 'active' && customer.isActive) ||
+        (statusFilter === 'inactive' && !customer.isActive);
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [customers, search, statusFilter]);
+
+  const activeCustomers = customers.filter((customer) => customer.isActive).length;
+  const inactiveCustomers = customers.length - activeCustomers;
 
   const toggleStatus = async (customer) => {
     try {
@@ -84,12 +104,11 @@ export default function AdminCustomersPage() {
         throw new Error(data.error || 'Error al actualizar cliente');
       }
 
-      const updatedCustomers = customers.map((item) =>
-        item.id === customer.id ? { ...item, isActive: newStatus } : item
+      setCustomers((current) =>
+        current.map((item) =>
+          item.id === customer.id ? { ...item, isActive: newStatus } : item
+        )
       );
-
-      setCustomers(updatedCustomers);
-      applySearch(search, updatedCustomers);
 
       showMessage(
         newStatus
@@ -115,7 +134,7 @@ export default function AdminCustomersPage() {
     }
 
     const text = encodeURIComponent(
-      `Hola ${customer.name || ''}, te contactamos desde BITRINEO.`
+      `Hola ${customer.name || ''}, te contactamos desde Bitrineo.`
     );
 
     window.open(`https://wa.me/${cleanPhone}?text=${text}`, '_blank');
@@ -132,8 +151,12 @@ export default function AdminCustomersPage() {
       setSelectedCustomer(customer);
       setModalMode('orders');
       setOrders([]);
+      setOrdersLoading(true);
 
-      const res = await fetch(`/api/admin/customers/${customer.id}/orders`);
+      const res = await fetch(`/api/admin/customers/${customer.id}/orders`, {
+        cache: 'no-store',
+      });
+
       const data = await res.json();
 
       if (!res.ok) {
@@ -144,6 +167,8 @@ export default function AdminCustomersPage() {
     } catch (error) {
       console.error(error);
       showMessage('No se pudieron cargar los pedidos');
+    } finally {
+      setOrdersLoading(false);
     }
   };
 
@@ -153,285 +178,429 @@ export default function AdminCustomersPage() {
     setModalMode('detail');
   };
 
-  useEffect(() => {
-    loadCustomers();
-  }, []);
-
   return (
-    <AdminShell>  
-    <div className="min-h-screen bg-slate-50 p-4 pb-28 md:p-6">
-      {message ? (
-        <div className="fixed left-4 right-4 top-4 z-50 rounded-2xl bg-slate-900 px-4 py-3.5 text-center text-sm font-semibold text-white shadow-xl md:left-auto md:w-96">
-          {message}
-        </div>
-      ) : null}
-
-      <div className="mx-auto max-w-6xl space-y-5">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Clientes</h1>
-          <p className="text-sm text-slate-500">
-            Administra clientes registrados, acceso, contacto y pedidos.
-          </p>
-        </div>
-
-        <div className="rounded-2xl bg-white p-4 shadow-sm">
-          <div className="relative">
-            <Search className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
-            <input
-              value={search}
-              onChange={(e) => applySearch(e.target.value)}
-              placeholder="Buscar por nombre, correo, teléfono o dirección..."
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3.5 pl-10 pr-4 text-sm outline-none focus:border-green-600 focus:bg-white"
-            />
+    <AdminShell>
+      <div className="space-y-6 font-['Montserrat',system-ui,sans-serif]">
+        {message ? (
+          <div className="fixed left-4 right-4 top-4 z-[300] rounded-2xl bg-slate-950 px-4 py-3.5 text-center text-sm font-medium text-white shadow-xl md:left-auto md:right-6 md:w-96">
+            {message}
           </div>
-        </div>
+        ) : null}
 
-        {loading ? (
-          <div className="rounded-2xl bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
-            Cargando clientes...
-          </div>
-        ) : filteredCustomers.length === 0 ? (
-          <div className="rounded-2xl bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
-            No hay clientes registrados.
-          </div>
-        ) : (
-          <div className="grid gap-4">
-            {filteredCustomers.map((customer) => (
-              <div
-                key={customer.id}
-                className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm"
-              >
-                <div className="flex gap-3">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-green-50">
-                    <UserRound className="h-6 w-6 text-green-700" />
-                  </div>
+        <section className="rounded-[28px] border border-orange-100 bg-white px-5 py-5 shadow-[0_10px_35px_rgba(15,23,42,0.04)] md:px-7">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-500">
+                Clientes Bitrineo
+              </p>
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                      <div>
-                        <h2 className="truncate text-base font-bold text-slate-900">
-                          {customer.name || 'Cliente sin nombre'}
-                        </h2>
-                        <p className="truncate text-sm text-slate-500">
-                          {customer.email}
-                        </p>
-                      </div>
+              <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 md:text-3xl">
+                Clientes
+              </h1>
 
-                      <span
-                        className={`w-fit rounded-full px-3 py-1 text-xs font-bold ${
-                          customer.isActive
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-red-100 text-red-700'
-                        }`}
-                      >
-                        {customer.isActive ? 'Activo' : 'Inactivo'}
-                      </span>
-                    </div>
-
-                    <div className="mt-3 grid gap-2 text-sm text-slate-500 md:grid-cols-3">
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4" />
-                        {customer.phone ? (
-                              <a
-                                href={`tel:${customer.phone.replace(/\D/g, '')}`}
-                                className="font-medium text-slate-600 underline-offset-2 hover:text-green-700 hover:underline"
-                              >
-                                {customer.phone}
-                              </a>
-                            ) : (
-                              <span>Sin teléfono</span>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-2 md:col-span-2">
-                        <MapPin className="h-4 w-4" />
-                        {customer.address ? (
-                          <a
-                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                              customer.address
-                            )}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="truncate font-medium text-slate-600 underline-offset-2 hover:text-green-700 hover:underline"
-                          >
-                            {customer.address}
-                          </a>
-                        ) : (
-                          <span className="truncate">Sin dirección</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-                  <button
-                    onClick={() => openDetail(customer)}
-                    className="flex items-center justify-center gap-2 rounded-xl bg-slate-100 px-3 py-3.5 text-sm font-bold text-slate-700"
-                  >
-                    <Eye className="h-4 w-4" />
-                    Detalle
-                  </button>
-
-                  <button
-                    onClick={() => toggleStatus(customer)}
-                    className={`flex items-center justify-center gap-2 rounded-xl px-3 py-3.5 text-sm font-bold ${
-                      customer.isActive
-                        ? 'bg-orange-100 text-orange-700'
-                        : 'bg-green-100 text-green-700'
-                    }`}
-                  >
-                    {customer.isActive ? (
-                      <PowerOff className="h-4 w-4" />
-                    ) : (
-                      <Power className="h-4 w-4" />
-                    )}
-                    {customer.isActive ? 'Deshabilitar' : 'Habilitar'}
-                  </button>
-
-                  <button
-                    onClick={() => openWhatsApp(customer)}
-                    className="flex items-center justify-center gap-2 rounded-xl bg-emerald-100 px-3 py-3.5 text-sm font-bold text-emerald-700"
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                    WhatsApp
-                  </button>
-
-                  <button
-                    onClick={() => openOrders(customer)}
-                    className="col-span-2 flex items-center justify-center gap-2 rounded-xl bg-blue-100 px-3 py-3.5 text-sm font-bold text-blue-700 md:col-span-1"
-                  >
-                    <ShoppingBag className="h-4 w-4" />
-                    Pedidos
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {selectedCustomer ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 md:items-center md:p-4">
-          <div className="max-h-[88vh] w-full overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl md:max-w-2xl md:rounded-3xl">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">
-                  {modalMode === 'orders'
-                    ? 'Pedidos del cliente'
-                    : 'Detalle del cliente'}
-                </h2>
-                <p className="text-sm text-slate-500">
-                  {selectedCustomer.name || selectedCustomer.email}
-                </p>
-              </div>
-
-              <button
-                onClick={closeModal}
-                className="rounded-full bg-slate-100 p-2 text-slate-600"
-              >
-                <X className="h-5 w-5" />
-              </button>
+              <p className="mt-1 max-w-2xl text-sm font-normal leading-relaxed text-slate-500">
+                Administra clientes registrados, estado de acceso, contacto por WhatsApp y pedidos realizados.
+              </p>
             </div>
 
-            {modalMode === 'detail' ? (
-              <div className="space-y-3">
-                <InfoRow label="Nombre" value={selectedCustomer.name} />
-                <InfoRow label="Correo" value={selectedCustomer.email} />
-                <InfoRow label="Teléfono" value={selectedCustomer.phone} />
-                <InfoRow label="Dirección" value={selectedCustomer.address} />
-                <InfoRow
-                  label="Estado"
-                  value={selectedCustomer.isActive ? 'Activo' : 'Inactivo'}
-                />
-                <InfoRow label="Rol" value={selectedCustomer.role} />
+            <div className="grid grid-cols-3 gap-3">
+              <KpiCard label="Total" value={customers.length} icon={Users} />
+              <KpiCard label="Activos" value={activeCustomers} icon={ShieldCheck} />
+              <KpiCard label="Inactivos" value={inactiveCustomers} icon={PowerOff} />
+            </div>
+          </div>
+        </section>
 
-                <div className="grid grid-cols-2 gap-2 pt-3">
-                  <button
-                    onClick={() => openWhatsApp(selectedCustomer)}
-                    className="rounded-xl bg-emerald-600 px-4 py-3.5 text-sm font-bold text-white"
-                  >
-                    WhatsApp
-                  </button>
+        <section className="rounded-[28px] border border-orange-100 bg-white p-4 shadow-[0_10px_35px_rgba(15,23,42,0.04)] md:p-5">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="relative w-full md:max-w-xl">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
 
-                  <button
-                    onClick={() => openOrders(selectedCustomer)}
-                    className="rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-bold text-white"
-                  >
-                    Ver pedidos
-                  </button>
-                </div>
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por nombre, correo, teléfono o dirección..."
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm font-normal text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-orange-300 focus:bg-white"
+              />
+            </div>
+
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-normal text-slate-700 outline-none transition focus:border-orange-300 focus:bg-white"
+            >
+              <option value="all">Todos los estados</option>
+              <option value="active">Solo activos</option>
+              <option value="inactive">Solo inactivos</option>
+            </select>
+          </div>
+        </section>
+
+        <section className="rounded-[28px] border border-orange-100 bg-white shadow-[0_10px_35px_rgba(15,23,42,0.04)]">
+          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 md:px-6">
+            <div>
+              <h2 className="text-base font-semibold text-slate-950">
+                Listado de clientes
+              </h2>
+
+              <p className="text-sm font-normal text-slate-500">
+                {filteredCustomers.length} cliente(s) encontrados
+              </p>
+            </div>
+
+            <div className="hidden rounded-full bg-orange-50 px-3 py-1 text-xs font-medium text-orange-600 sm:block">
+              Bitrineo
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="flex h-72 flex-col items-center justify-center gap-3 text-slate-500">
+              <Loader2 className="h-7 w-7 animate-spin text-orange-500" />
+              <p className="text-sm font-medium">Cargando clientes...</p>
+            </div>
+          ) : filteredCustomers.length === 0 ? (
+            <div className="px-6 py-14 text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50 text-orange-500">
+                <Search className="h-6 w-6" />
               </div>
-            ) : (
-              <div className="space-y-3">
-                {orders.length === 0 ? (
-                  <div className="rounded-2xl bg-slate-50 p-5 text-center text-sm text-slate-500">
-                    Este cliente no tiene pedidos registrados.
-                  </div>
-                ) : (
-                  orders.map((order) => (
-                    <div
-                      key={order.id}
-                      className="rounded-2xl border border-slate-100 bg-slate-50 p-4"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-bold text-slate-900">
-                            Pedido #{order.id.slice(0, 8)}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            {new Date(order.createdAt).toLocaleString('es-CL')}
-                          </p>
-                        </div>
 
-                        <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-bold text-yellow-700">
-                          {order.status}
+              <p className="text-sm font-medium text-slate-800">
+                No encontramos clientes
+              </p>
+
+              <p className="mt-1 text-sm font-normal text-slate-500">
+                Intenta buscar con otro dato o cambia el filtro de estado.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {filteredCustomers.map((customer) => (
+                <article
+                  key={customer.id}
+                  className="group flex flex-col gap-4 px-5 py-4 transition hover:bg-orange-50/35 md:flex-row md:items-center md:justify-between md:px-6"
+                >
+                  <div className="flex min-w-0 gap-4">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-orange-500">
+                      <UserRound className="h-6 w-6" />
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="truncate text-[15px] font-medium text-slate-950">
+                          {customer.name || 'Cliente sin nombre'}
+                        </h3>
+
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                            customer.isActive
+                              ? 'bg-emerald-50 text-emerald-600'
+                              : 'bg-red-50 text-red-500'
+                          }`}
+                        >
+                          {customer.isActive ? 'Activo' : 'Inactivo'}
                         </span>
                       </div>
 
-                      <div className="mt-3 space-y-2">
-                        {order.items?.map((item) => (
-                          <div
-                            key={item.id}
-                            className="flex justify-between gap-3 text-sm"
-                          >
-                            <span className="text-slate-600">
-                              {item.productName} x {item.quantity}{' '}
-                              {item.unitType}
-                            </span>
-                            <span className="font-bold text-slate-900">
-                              ${Number(item.subtotal || 0).toLocaleString('es-CL')}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
+                      <div className="mt-2 grid gap-2 text-sm font-normal text-slate-500 md:grid-cols-2">
+                        <InfoMini icon={Mail} value={customer.email || 'Sin correo'} />
 
-                      <div className="mt-3 border-t pt-3 text-right text-sm font-bold text-slate-900">
-                        Total estimado: $
-                        {Number(order.totalEstimated || 0).toLocaleString(
-                          'es-CL'
-                        )}
+                        <InfoMini
+                          icon={Phone}
+                          value={customer.phone || 'Sin teléfono'}
+                          href={
+                            customer.phone
+                              ? `tel:${customer.phone.replace(/\D/g, '')}`
+                              : null
+                          }
+                        />
+
+                        <InfoMini
+                          icon={MapPin}
+                          value={customer.address || 'Sin dirección'}
+                          href={
+                            customer.address
+                              ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                                  customer.address
+                                )}`
+                              : null
+                          }
+                          external
+                          wide
+                        />
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      ) : null}
-    </div>
-    </AdminShell> 
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 md:flex md:items-center">
+                    <ActionButton
+                      icon={Eye}
+                      label="Detalle"
+                      onClick={() => openDetail(customer)}
+                    />
+
+                    <ActionButton
+                      icon={customer.isActive ? PowerOff : Power}
+                      label={customer.isActive ? 'Deshabilitar' : 'Habilitar'}
+                      onClick={() => toggleStatus(customer)}
+                      variant={customer.isActive ? 'warning' : 'success'}
+                    />
+
+                    <ActionButton
+                      icon={MessageCircle}
+                      label="WhatsApp"
+                      onClick={() => openWhatsApp(customer)}
+                      variant="whatsapp"
+                    />
+
+                    <ActionButton
+                      icon={ShoppingBag}
+                      label="Pedidos"
+                      onClick={() => openOrders(customer)}
+                      variant="orange"
+                    />
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {selectedCustomer ? (
+          <CustomerModal
+            customer={selectedCustomer}
+            modalMode={modalMode}
+            orders={orders}
+            ordersLoading={ordersLoading}
+            onClose={closeModal}
+            onWhatsApp={() => openWhatsApp(selectedCustomer)}
+            onOrders={() => openOrders(selectedCustomer)}
+          />
+        ) : null}
+      </div>
+    </AdminShell>
   );
 }
 
-function InfoRow({ label, value }) {
+function KpiCard({ label, value, icon: Icon }) {
   return (
-    <div className="rounded-2xl bg-slate-50 p-4">
-      <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
-        {label}
-      </p>
-      <p className="mt-1 text-sm font-semibold text-slate-800">
+    <div className="rounded-2xl bg-orange-50 px-4 py-3">
+      <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl bg-white text-orange-500 shadow-sm">
+        <Icon className="h-4 w-4" />
+      </div>
+
+      <p className="text-xs font-medium text-orange-600">{label}</p>
+      <p className="text-xl font-semibold text-slate-950">{value}</p>
+    </div>
+  );
+}
+
+function InfoMini({ icon: Icon, value, href, external = false, wide = false }) {
+  const content = (
+    <>
+      <Icon className="h-4 w-4 shrink-0 text-slate-400" />
+      <span className="truncate">{value}</span>
+    </>
+  );
+
+  const className = `flex min-w-0 items-center gap-2 ${wide ? 'md:col-span-2' : ''}`;
+
+  if (href) {
+    return (
+      <a
+        href={href}
+        target={external ? '_blank' : undefined}
+        rel={external ? 'noopener noreferrer' : undefined}
+        className={`${className} underline-offset-2 transition hover:text-orange-600 hover:underline`}
+      >
+        {content}
+      </a>
+    );
+  }
+
+  return <div className={className}>{content}</div>;
+}
+
+function ActionButton({ icon: Icon, label, onClick, variant = 'default' }) {
+  const styles = {
+    default:
+      'border border-slate-200 bg-white text-slate-600 hover:border-orange-200 hover:text-orange-600',
+    warning: 'bg-orange-50 text-orange-600 hover:bg-orange-100',
+    success: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100',
+    whatsapp: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100',
+    orange: 'bg-orange-500 text-white hover:bg-orange-600',
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-medium transition ${styles[variant]}`}
+    >
+      <Icon className="h-3.5 w-3.5" />
+      {label}
+    </button>
+  );
+}
+
+function CustomerModal({
+  customer,
+  modalMode,
+  orders,
+  ordersLoading,
+  onClose,
+  onWhatsApp,
+  onOrders,
+}) {
+  return (
+    <div className="fixed inset-0 z-[200] flex items-end justify-center bg-slate-950/50 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+      <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-[30px] bg-white p-5 shadow-2xl sm:rounded-[30px] sm:p-7">
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-500">
+              {modalMode === 'orders' ? 'Historial de pedidos' : 'Detalle cliente'}
+            </p>
+
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+              {modalMode === 'orders' ? 'Pedidos del cliente' : 'Detalle del cliente'}
+            </h2>
+
+            <p className="mt-1 text-sm font-normal text-slate-500">
+              {customer.name || customer.email || 'Cliente'}
+            </p>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-orange-50 hover:text-orange-600"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {modalMode === 'detail' ? (
+          <div className="space-y-5">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <InfoCard icon={UserRound} label="Nombre" value={customer.name} />
+              <InfoCard icon={Mail} label="Correo" value={customer.email} />
+              <InfoCard icon={Phone} label="Teléfono" value={customer.phone} />
+              <InfoCard icon={MapPin} label="Dirección" value={customer.address} />
+              <InfoCard
+                icon={ShieldCheck}
+                label="Estado"
+                value={customer.isActive ? 'Activo' : 'Inactivo'}
+                accent={customer.isActive}
+              />
+              <InfoCard icon={Users} label="Rol" value={customer.role} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={onWhatsApp}
+                className="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-medium text-white transition hover:bg-emerald-600"
+              >
+                WhatsApp
+              </button>
+
+              <button
+                onClick={onOrders}
+                className="rounded-2xl bg-orange-500 px-4 py-3 text-sm font-medium text-white shadow-[0_10px_24px_rgba(255,90,0,0.22)] transition hover:bg-orange-600"
+              >
+                Ver pedidos
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {ordersLoading ? (
+              <div className="flex h-40 flex-col items-center justify-center gap-3 text-slate-500">
+                <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+                <p className="text-sm font-medium">Cargando pedidos...</p>
+              </div>
+            ) : orders.length === 0 ? (
+              <div className="rounded-[24px] bg-slate-50 p-6 text-center">
+                <ShoppingBag className="mx-auto mb-3 h-7 w-7 text-orange-500" />
+                <p className="text-sm font-medium text-slate-800">
+                  Este cliente no tiene pedidos registrados.
+                </p>
+              </div>
+            ) : (
+              orders.map((order) => (
+                <div
+                  key={order.id}
+                  className="rounded-[24px] border border-slate-100 bg-white p-4 shadow-sm"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-950">
+                        Pedido #{String(order.id).slice(0, 8)}
+                      </p>
+
+                      <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-500">
+                        <CalendarDays className="h-3.5 w-3.5" />
+                        {order.createdAt
+                          ? new Date(order.createdAt).toLocaleString('es-CL')
+                          : 'Sin fecha'}
+                      </p>
+                    </div>
+
+                    <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-medium text-orange-600">
+                      {order.status || 'Sin estado'}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 space-y-2">
+                    {order.items?.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 text-sm"
+                      >
+                        <div className="flex min-w-0 items-center gap-2">
+                          <Package className="h-4 w-4 shrink-0 text-orange-500" />
+                          <span className="truncate text-slate-600">
+                            {item.productName} x {item.quantity} {item.unitType}
+                          </span>
+                        </div>
+
+                        <span className="shrink-0 font-medium text-slate-950">
+                          ${Number(item.subtotal || 0).toLocaleString('es-CL')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 border-t border-slate-100 pt-3 text-right">
+                    <p className="text-xs font-medium text-slate-400">
+                      Total estimado
+                    </p>
+                    <p className="text-lg font-semibold text-slate-950">
+                      ${Number(order.totalEstimated || 0).toLocaleString('es-CL')}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function InfoCard({ icon: Icon, label, value, accent = false }) {
+  return (
+    <div
+      className={`rounded-[22px] border p-4 ${
+        accent
+          ? 'border-orange-100 bg-orange-50/60'
+          : 'border-slate-100 bg-slate-50'
+      }`}
+    >
+      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-orange-500 shadow-sm">
+        <Icon className="h-5 w-5" />
+      </div>
+
+      <p className="text-xs font-medium text-slate-500">{label}</p>
+
+      <p className="mt-1 break-words text-sm font-semibold text-slate-950">
         {value || 'Sin información'}
       </p>
     </div>

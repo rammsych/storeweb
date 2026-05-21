@@ -1,4 +1,12 @@
 import './globals.css';
+import { Montserrat } from 'next/font/google';
+
+const montserrat = Montserrat({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-montserrat',
+});
+
 
 export const metadata = {
   title: 'Bitrineo',
@@ -11,7 +19,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="es">
+    <html lang="es"  className={montserrat.variable}>
       <body>{children}</body>
     </html>
   );

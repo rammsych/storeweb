@@ -2,42 +2,55 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { formatPrice, getUnitLabel } from '@/lib/format';
-import SignOutButton from '@/components/SignOutButton';
 import FloatingCartButton from '@/components/FloatingCartButton';
 import MobileToast from '@/components/MobileToast';
-
+import Image from 'next/image';
 
 export default function CatalogClient({ products, user }) {
   const [cart, setCart] = useState([]);
   const [productQuantities, setProductQuantities] = useState({});
   const [note, setNote] = useState('');
   const [sending, setSending] = useState(false);
-
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
+  const [searchText, setSearchText] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('todas');
+  const [lastOrderForWhatsApp, setLastOrderForWhatsApp] = useState(null);
+
   const [toast, setToast] = useState({
     open: false,
     message: '',
     type: 'success',
   });
 
-  const [searchText, setSearchText] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('todas');
-  const [lastOrderForWhatsApp, setLastOrderForWhatsApp] = useState(null);
-
   const categories = [
-    { id: 'todas', label: 'Todas', icon: '🛒' },
+    { id: 'todas', label: 'Todas', icon: '▦' },
     { id: 'verduras', label: 'Verduras', icon: '🥬' },
     { id: 'frutas', label: 'Frutas', icon: '🍎' },
     { id: 'limpieza', label: 'Limpieza', icon: '🧴' },
     { id: 'abarrotes', label: 'Abarrotes', icon: '🥫' },
   ];
 
+  const timeSlots = ['14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30'];
+
+  const itemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+
+  const total = useMemo(
+    () => cart.reduce((acc, item) => acc + item.quantity * item.unitPrice, 0),
+    [cart]
+  );
+
+  useEffect(() => {
+    if (!toast.open) return;
+    const timer = setTimeout(() => {
+      setToast((current) => ({ ...current, open: false }));
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [toast.open]);
 
   const getMinScheduledDate = () => {
     const now = new Date();
     const minDate = new Date(now);
-
     minDate.setDate(now.getDate() + 1);
 
     const year = minDate.getFullYear();
@@ -47,47 +60,19 @@ export default function CatalogClient({ products, user }) {
     return `${year}-${month}-${day}`;
   };
 
-  const timeSlots = [
-    '14:00',
-    '14:30',
-    '15:00',
-    '15:30',
-    '16:00',
-    '16:30',
-    '17:00',
-    '17:30',
-    '18:00',
-    '18:30',
-  ];
+  function changeProductQty(productId, action) {
+    setProductQuantities((current) => {
+      const currentQty = Number(current[productId] || 1);
 
-
-
-  const itemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
-
-  useEffect(() => {
-    if (!toast.open) return;
-
-    const timer = setTimeout(() => {
-      setToast((current) => ({ ...current, open: false }));
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [toast.open]);
-
+      return {
+        ...current,
+        [productId]: action === 'minus' ? Math.max(1, currentQty - 1) : currentQty + 1,
+      };
+    });
+  }
 
   function addToCart(product) {
-    setToast((current) => ({ ...current, open: false }));
-
     const selectedQuantity = Number(productQuantities[product.id] || 1);
-
-    if (selectedQuantity <= 0) {
-      setToast({
-        open: true,
-        message: 'La cantidad debe ser mayor a cero.',
-        type: 'error',
-      });
-      return;
-    }
 
     setCart((current) => {
       const existing = current.find((item) => item.productId === product.id);
@@ -95,10 +80,7 @@ export default function CatalogClient({ products, user }) {
       if (existing) {
         return current.map((item) =>
           item.productId === product.id
-            ? {
-              ...item,
-              quantity: Number((item.quantity + selectedQuantity).toFixed(2)),
-            }
+            ? { ...item, quantity: Number((item.quantity + selectedQuantity).toFixed(2)) }
             : item
         );
       }
@@ -119,13 +101,22 @@ export default function CatalogClient({ products, user }) {
       ...current,
       [product.id]: 1,
     }));
+
+    setToast({
+      open: true,
+      message: 'Producto agregado al pedido',
+      type: 'success',
+    });
   }
 
   function updateQuantity(productId, quantity) {
     const parsed = Number(quantity);
+
     setCart((current) =>
       current
-        .map((item) => (item.productId === productId ? { ...item, quantity: parsed } : item))
+        .map((item) =>
+          item.productId === productId ? { ...item, quantity: parsed } : item
+        )
         .filter((item) => item.quantity > 0)
     );
   }
@@ -134,47 +125,32 @@ export default function CatalogClient({ products, user }) {
     setCart((current) => current.filter((item) => item.productId !== productId));
   }
 
-  const total = useMemo(
-    () => cart.reduce((acc, item) => acc + item.quantity * item.unitPrice, 0),
-    [cart]
-  );
-
-
-
-
   const buildWhatsAppMessage = (order) => {
     const productsText = order.items
-      .map(
-        (item) =>
-          `- ${item.productName} x ${item.quantity}`
-      )
+      .map((item) => `- ${item.productName} x ${item.quantity}`)
       .join('\n');
 
     return `
-    🛒 Nuevo pedido BITRINEO
+🛒 Nuevo pedido BITRINEO
 
-    Cliente: ${order.customerName}
+Cliente: ${order.customerName}
+Email: ${order.customerEmail}
 
-    Email: ${order.customerEmail}
+Productos:
+${productsText}
 
-    Productos:
-    ${productsText}
+Total: $${order.total}
 
-    Total: $${order.total}
+Entrega:
+${order.deliveryDate} - ${order.deliveryTime}
 
-    Entrega:
-    ${order.deliveryDate} - ${order.deliveryTime}
-
-    Comentario:
-    ${order.note || 'Sin comentarios'}
-    `;
+Comentario:
+${order.note || 'Sin comentarios'}
+`;
   };
 
   const sendOrderToWhatsApp = (order) => {
     const phone = process.env.NEXT_PUBLIC_SELLER_WHATSAPP;
-
-    console.log('WHATSAPP PHONE:', phone);
-    console.log('ORDER WHATSAPP:', order);
 
     if (!phone) {
       alert('No está configurado NEXT_PUBLIC_SELLER_WHATSAPP');
@@ -182,69 +158,38 @@ export default function CatalogClient({ products, user }) {
     }
 
     const message = buildWhatsAppMessage(order);
-
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-
-    console.log('WHATSAPP URL:', url);
-
     window.open(url, '_blank');
   };
 
-
-
-
-
-
-
-
-
   async function submitOrder() {
     if (cart.length === 0) {
-      setToast({
-        open: true,
-        message: 'Debes agregar al menos un producto.',
-        type: 'error',
-      });
+      setToast({ open: true, message: 'Debes agregar al menos un producto.', type: 'error' });
       return;
     }
 
-
     if (!scheduledDate || !scheduledTime) {
-      setToast({
-        open: true,
-        message: 'Debes seleccionar fecha y horario del pedido.',
-        type: 'error',
-      });
+      setToast({ open: true, message: 'Debes seleccionar fecha y horario del pedido.', type: 'error' });
       return;
     }
 
     const minScheduledDate = getMinScheduledDate();
 
     if (scheduledDate < minScheduledDate) {
-      setToast({
-        open: true,
-        message: 'Solo puedes seleccionar fechas desde el próximo día disponible.',
-        type: 'error',
-      });
+      setToast({ open: true, message: 'Solo puedes seleccionar fechas desde el próximo día disponible.', type: 'error' });
       return;
     }
 
     if (scheduledTime < '14:00' || scheduledTime > '18:30') {
-      setToast({
-        open: true,
-        message: 'Solo puedes seleccionar horarios entre 14:00 y 18:30 hrs.',
-        type: 'error',
-      });
+      setToast({ open: true, message: 'Solo puedes seleccionar horarios entre 14:00 y 18:30 hrs.', type: 'error' });
       return;
     }
+
     setSending(true);
-    setToast((current) => ({ ...current, open: false }));
 
     const response = await fetch('/api/orders', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         items: cart,
         notes: note,
@@ -253,8 +198,6 @@ export default function CatalogClient({ products, user }) {
         scheduledDeliveryTime: scheduledTime,
       }),
     });
-
-
 
     let data = {};
     const text = await response.text();
@@ -276,22 +219,20 @@ export default function CatalogClient({ products, user }) {
       return;
     }
 
-    setCart([]);
-    setNote('');
-
-
-    setScheduledDate('');
-    setScheduledTime('');
-
     setLastOrderForWhatsApp({
       customerName: user.name,
       customerEmail: user.email,
       items: cart,
-      total: total,
+      total,
       deliveryDate: scheduledDate,
       deliveryTime: scheduledTime,
-      note: note,
+      note,
     });
+
+    setCart([]);
+    setNote('');
+    setScheduledDate('');
+    setScheduledTime('');
 
     setToast({
       open: true,
@@ -302,7 +243,6 @@ export default function CatalogClient({ products, user }) {
 
   const filteredProducts = products.filter((product) => {
     const text = searchText.toLowerCase().trim();
-
     const productCategory = product.categoryId?.toLowerCase();
 
     const matchesText =
@@ -312,439 +252,478 @@ export default function CatalogClient({ products, user }) {
       productCategory?.includes(text);
 
     const matchesCategory =
-      selectedCategory === 'todas' ||
-      productCategory === selectedCategory;
+      selectedCategory === 'todas' || productCategory === selectedCategory;
 
     return matchesText && matchesCategory;
   });
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
+    <main className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#fff8f8] px-3 pb-24 pt-4 font-[Montserrat] text-slate-900 antialiased sm:px-5 lg:px-8 lg:pb-8">
       <MobileToast
         open={toast.open}
         message={toast.message}
         type={toast.type}
         onClose={() => setToast((current) => ({ ...current, open: false }))}
       />
-      <div className="mb-6 flex flex-col gap-4 rounded-2xl bg-white p-6 shadow md:flex-row md:items-center md:justify-between">
+
+      <section className="mx-auto w-full max-w-[1400px] overflow-x-hidden">
+        <header className="mb-4 w-full rounded-[24px] border border-slate-200 bg-white px-4 py-4 shadow-[0_2px_10px_rgba(0,0,0,0.04)]">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex items-center">
+                <Image
+                  src="/logo-navbar.png"
+                  alt="Bitrineo"
+                  width={720}
+                  height={180}
+                  priority
+                  className="
+      h-auto
+      w-[170px]
+      sm:w-[220px]
+      lg:w-[260px]
+      object-contain
+    "
+                />
+              </div>
+            </div>
 
 
 
-        <div style={styles.searchSection}>
-          <div style={styles.searchRow}>
-            <div style={styles.searchBox}>
-              <span style={styles.searchIcon}>🔍</span>
+            <div className="flex shrink-0 items-center gap-2 rounded-2xl bg-white px-1">
+
+
+              <button
+                type="button"
+                title={user.name}
+                className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-900 transition hover:bg-slate-50"
+                aria-label="Usuario"
+              >
+                <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M20 21a8 8 0 0 0-16 0" />
+                  <circle cx="12" cy="8" r="4" />
+                </svg>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.removeItem('token');
+                  window.location.href = '/login';
+                }}
+                className="flex h-10 w-10 items-center justify-center rounded-xl text-pink-500 transition hover:bg-pink-50"
+                aria-label="Cerrar sesión"
+              >
+                <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                  <path d="M10 17l5-5-5-5" />
+                  <path d="M15 12H3" />
+                </svg>
+              </button>
+
+              {user.role === 'ADMIN' ? (
+                <a
+                  href="/admin"
+                  title="Panel administrador"
+                  aria-label="Panel administrador"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-900 transition hover:bg-slate-50"
+                >
+                  <svg
+                    width="21"
+                    height="21"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect x="3" y="7" width="18" height="13" rx="2" />
+                    <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  </svg>
+                </a>
+              ) : null}
+
+
+
+            </div>
+
+          </div>
+        </header>
+
+        <div className="grid w-full max-w-full gap-5 overflow-x-hidden xl:grid-cols-[1fr_350px]">
+          <section className="w-full min-w-0 overflow-x-hidden rounded-[28px] border border-slate-200 bg-white/75 px-3 pb-3 pt-1 shadow-[0_2px_10px_rgba(0,0,0,0.04)] sm:p-4 lg:p-5">
+
+
+
+            {/* <div className="mb-3 flex h-12 w-full items-center rounded-2xl border border-slate-100 bg-white px-4 shadow-[0_2px_10px_rgba(0,0,0,0.04)]">
+              <span className="mr-3 text-lg text-slate-400">⌕</span> */}
+
+            <div className="mb-3 flex h-12 w-full items-center rounded-2xl border border-slate-200 bg-white px-4 shadow-[0_2px_10px_rgba(0,0,0,0.04)]">
+              <div className="mr-3 flex h-8 w-8 items-center justify-center rounded-xl bg-slate-50 text-slate-500">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="M20 20L16.5 16.5" />
+                </svg>
+              </div>
+
               <input
                 type="text"
                 placeholder="Buscar productos..."
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
-                style={styles.searchInput}
+                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
               />
             </div>
 
-            <button
-              type="button"
-              style={styles.filterButton}
-              onClick={() => {
-                setSearchText('');
-                setSelectedCategory('todas');
-              }}
-            >
-              ⚙️
-            </button>
-          </div>
-
-          <div style={styles.categoryRow}>
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                type="button"
-                onClick={() => setSelectedCategory(category.id)}
-                style={{
-                  ...styles.categoryButton,
-                  ...(selectedCategory === category.id
-                    ? styles.categoryButtonActive
-                    : {}),
-                }}
-              >
-                <span>{category.icon}</span>
-                {category.label}
-              </button>
-            ))}
-          </div>
-        </div>
 
 
+            <div className="-mx-1 mb-5 flex max-w-full gap-2 overflow-x-auto border-b border-slate-200 px-1 pb-4">
+              {categories.map((category) => {
+                const active = selectedCategory === category.id;
 
+                return (
+                  <button
+                    key={category.id}
+                    type="button"
+                    onClick={() => setSelectedCategory(category.id)}
+                    className={`flex h-10 shrink-0 items-center gap-2 rounded-2xl border px-4 text-xs transition ${active
+                      ? 'border-pink-300 bg-pink-50 text-pink-600'
+                      : 'border-slate-100 bg-white text-slate-500'
+                      }`}
+                  >
+                    <span>{category.icon}</span>
+                    {category.label}
+                  </button>
+                );
+              })}
+            </div>
 
-        <div>
-          <h1 className="text-3xl font-bold text-green-800">Catálogo de verdulería</h1>
-          <p className="text-slate-600">
-            Hola {user.name}. Agrega productos y envía tu solicitud al vendedor.
-          </p>
-        </div>
+            <div className="mb-4">
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
+                Productos
+              </h2>
+              <p className="mt-1 text-xs text-slate-400">
+                {filteredProducts.length} productos disponibles
+              </p>
+            </div>
 
-        <div className="flex flex-wrap gap-3">
-          {user.role === 'ADMIN' ? (
-            <a
-              href="/admin"
-              className="rounded-lg bg-orange-500 px-4 py-2 font-semibold text-white hover:bg-orange-600"
-            >
-              Administrar
-            </a>
-          ) : null}
+            <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredProducts.map((product) => (
+                <article
+                  key={product.id}
+                  className="w-full overflow-hidden rounded-[24px] border border-slate-100 bg-white shadow-[0_10px_28px_rgba(15,23,42,0.055)] transition hover:border-slate-200 hover:shadow-[0_18px_44px_rgba(244,63,94,0.10)]"
+                >
+                  <div className="relative w-full overflow-hidden bg-slate-50">
+                    <img
+                      src={product.imageUrl || '/placeholder-product.png'}
+                      alt={product.name}
+                      className="h-[190px] w-full object-cover sm:h-[165px] lg:h-[145px]"
+                    />
 
-        </div>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-
-          {filteredProducts.map((product) => (
-            <article key={product.id} className="overflow-hidden rounded-2xl bg-white shadow">
-              <img
-                src={product.imageUrl || '/placeholder-product.png'}
-                alt={product.name}
-                className="h-48 w-full object-cover"
-              />
-              <div className="p-5">
-                <h2 className="text-xl font-semibold">{product.name}</h2>
-                <p className="mb-3 text-sm text-slate-600">{product.description}</p>
-
-                <div className="mb-4 flex items-center justify-between gap-3">
-                  <span className="text-lg font-bold text-green-700">
-                    {formatPrice(product.price)}
-                  </span>
-
-                  <div className="flex items-center gap-2">
-
-                    <select
-                      value={productQuantities[product.id] || 1}
-                      onChange={(e) =>
-                        setProductQuantities((current) => ({
-                          ...current,
-                          [product.id]: Number(e.target.value),
-                        }))
-                      }
-                      className="h-9 w-16 rounded-xl border-2 border-orange-300 bg-white px-1 text-center text-sm font-bold text-slate-800 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
+                    <button
+                      type="button"
+                      className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white text-sm text-slate-400 shadow-[0_2px_10px_rgba(0,0,0,0.04)]"
                     >
-                      {Array.from({ length: 20 }, (_, index) => index + 1).map((qty) => (
-                        <option key={qty} value={qty}>
-                          {qty}
-                        </option>
-                      ))}
-                    </select>
+                      ♡
+                    </button>
+                  </div>
 
-                    <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                  <div className="p-4">
+                    <h3 className="line-clamp-1 text-base font-medium text-slate-950">
+                      {product.name}
+                    </h3>
+
+                    {product.description ? (
+                      <p className="mt-1 line-clamp-1 text-xs text-slate-400">
+                        {product.description}
+                      </p>
+                    ) : null}
+
+                    <div className="mt-3 flex items-baseline gap-1">
+                      <span className="text-2xl font-medium text-pink-600">
+                        {formatPrice(product.price)}
+                      </span>
+
+                      <span className="text-xs text-slate-400">
+                        /{getUnitLabel(product.unitType)}
+                      </span>
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between gap-3">
+                      <div className="flex h-10 min-w-[120px] items-center justify-center rounded-full border border-slate-200 bg-pink-50">
+                        <button
+                          type="button"
+                          onClick={() => changeProductQty(product.id, 'minus')}
+                          className="flex h-10 w-10 items-center justify-center text-sm text-slate-500"
+                        >
+                          −
+                        </button>
+
+                        <div className="flex h-10 w-8 items-center justify-center text-sm text-slate-800">
+                          {productQuantities[product.id] || 1}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => changeProductQty(product.id, 'plus')}
+                          className="flex h-10 w-10 items-center justify-center text-sm text-slate-500"
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => addToCart(product)}
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-orange-500 text-2xl leading-none text-white shadow-md shadow-pink-100 active:scale-95"
+                        aria-label={`Agregar ${product.name}`}
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    <span className="mt-3 inline-flex rounded-full bg-pink-50 px-3 py-1 text-[11px] text-pink-500">
                       por {getUnitLabel(product.unitType)}
                     </span>
                   </div>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <aside
+            id="tu-solicitud"
+            className="h-fit w-full min-w-0 rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_14px_45px_rgba(15,23,42,0.065)] xl:sticky xl:top-5"
+          >
+            <div className="mb-4 border-b border-slate-100 pb-4">
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
+                Tu pedido
+              </h2>
+              <p className="mt-1 text-xs text-slate-400">
+                {itemCount > 0
+                  ? `${itemCount} producto${itemCount === 1 ? '' : 's'} en tu pedido`
+                  : 'Todavía no agregas productos'}
+              </p>
+            </div>
+
+            <div className="space-y-2.5">
+              {cart.length === 0 ? (
+                <div className="rounded-2xl bg-slate-50 p-4 text-xs text-slate-500">
+                  Agrega productos desde el catálogo.
                 </div>
+              ) : (
+                cart.map((item) => {
+                  const productInfo = products.find((p) => p.id === item.productId);
 
-                <button
-                  onClick={() => addToCart(product)}
-                  className="w-full rounded-lg bg-green-700 px-4 py-3 font-semibold text-white hover:bg-green-800"
-                >
-                  Agregar
-                </button>
-              </div>
-            </article>
-          ))}
-
-
-        </section>
-
-        <aside id="tu-solicitud" className="h-fit rounded-3xl bg-white p-5 pb-28 shadow-sm md:pb-5">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-green-800">
-              Tu pedido ({itemCount})
-            </h2>
-
-            {cart.length > 0 && (
-              <button
-                onClick={() => setCart([])}
-                className="text-sm font-bold text-red-500 hover:text-red-700"
-              >
-                Vaciar
-              </button>
-            )}
-          </div>
-          <div className="space-y-4">
-            {cart.length === 0 ? (
-              <p className="text-sm text-slate-500">Todavía no agregas productos.</p>
-            ) : (
-              cart.map((item) => {
-                const productInfo = products.find((p) => p.id === item.productId);
-
-                return (
-                  <div
-                    key={item.productId}
-                    className="border-b border-slate-100 py-4 last:border-b-0"
-                  >
-                    <div className="flex items-center gap-3">
+                  return (
+                    <div
+                      key={item.productId}
+                      className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-2.5 shadow-[0_2px_10px_rgba(0,0,0,0.04)]"
+                    >
                       <img
                         src={productInfo?.imageUrl || '/placeholder-product.png'}
                         alt={item.productName}
-                        className="h-14 w-14 rounded-xl object-cover"
+                        className="h-11 w-11 rounded-xl object-cover"
                       />
 
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <h3 className="text-[15px] font-medium text-slate-800">
-                              {item.productName}
-                            </h3>
-
-                            <p className="mt-1 text-sm text-slate-500">
-                              {formatPrice(item.unitPrice)} / {getUnitLabel(item.unitType)}
-                            </p>
-                          </div>
-
-                          <button
-                            onClick={() => removeItem(item.productId)}
-                            className="text-red-400 hover:text-red-600"
-                          >
-                            🗑️
-                          </button>
-                        </div>
-
-                        <div className="mt-3 flex items-center justify-between gap-3">
-                          <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 bg-white">
-                            <button
-                              onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                              className="h-8 w-9 text-lg font-normal text-slate-600 hover:bg-slate-50"
-                            >
-                              −
-                            </button>
-
-                            <div className="flex h-8 w-9 items-center justify-center text-sm font-normal text-slate-700">
-                              {item.quantity}
-                            </div>
-
-                            <button
-                              onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                              className="h-8 w-9 text-lg font-normal text-slate-600 hover:bg-slate-50"
-                            >
-                              +
-                            </button>
-                          </div>
-
-                          <p className="text-base font-semibold text-slate-900">
-                            {formatPrice(item.quantity * item.unitPrice)}
-                          </p>
-                        </div>
+                        <h3 className="line-clamp-1 text-xs font-medium text-slate-900">
+                          {item.productName}
+                        </h3>
+                        <p className="mt-0.5 text-xs font-medium text-pink-600">
+                          {formatPrice(item.unitPrice)}
+                        </p>
                       </div>
+
+                      <div className="flex h-8 items-center rounded-full border border-slate-200 bg-slate-50">
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                          className="h-8 w-7 text-sm text-slate-500"
+                        >
+                          −
+                        </button>
+
+                        <div className="flex h-8 w-6 items-center justify-center text-xs font-medium">
+                          {item.quantity}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                          className="h-8 w-7 text-sm text-slate-500"
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => removeItem(item.productId)}
+                        className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-50 text-xs text-red-400"
+                      >
+                        🗑️
+                      </button>
                     </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
+                  );
+                })
+              )}
+            </div>
 
+            <div className="mt-4 rounded-[24px] border border-orange-100 bg-gradient-to-br from-orange-50 to-pink-50 p-4">
+              <h3 className="mb-4 text-base font-medium text-orange-600">
+                📅 Entrega programada
+              </h3>
 
-          <div className="mt-5 rounded-2xl border border-orange-200 bg-orange-50 p-4">
-            <h3 className="mb-4 text-xl font-bold text-orange-700">
-              Pedido Programado
-            </h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-slate-700">
+                    Fecha de entrega
+                  </label>
 
-            <div className="space-y-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Fecha de entrega
-                </label>
+                  <input
+                    type="date"
+                    min={getMinScheduledDate()}
+                    value={scheduledDate}
+                    onChange={(e) => setScheduledDate(e.target.value)}
+                    className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-pink-400"
+                  />
+                </div>
 
-                <input
-                  type="date"
-                  min={getMinScheduledDate()}
-                  value={scheduledDate}
-                  onChange={(e) => setScheduledDate(e.target.value)}
-                  className="w-full rounded-lg border p-2"
-                />
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-slate-700">
+                    Horario de entrega
+                  </label>
 
-                <p className="mt-1 text-xs text-slate-500">
-                  Disponible desde el día siguiente.
-                </p>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Horario de entrega
-                </label>
-
-                <select
-                  value={scheduledTime}
-                  onChange={(e) => setScheduledTime(e.target.value)}
-                  className="w-full rounded-lg border p-2"
-                >
-                  <option value="">
-                    Seleccionar horario
-                  </option>
-
-                  {timeSlots.map((time) => (
-                    <option key={time} value={time}>
-                      {time} hrs
-                    </option>
-                  ))}
-                </select>
-
-                <p className="mt-1 text-xs text-slate-500">
-                  Horarios disponibles entre 14:00 y 18:30 hrs.
-                </p>
+                  <select
+                    value={scheduledTime}
+                    onChange={(e) => setScheduledTime(e.target.value)}
+                    className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-pink-400"
+                  >
+                    <option value="">Selecciona un horario</option>
+                    {timeSlots.map((time) => (
+                      <option key={time} value={time}>
+                        {time} hrs
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="mt-5">
-            <label className="mb-1 block text-sm font-medium">Comentario para el vendedor</label>
-            <textarea
-              rows="4"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Ejemplo: ojalá las paltas maduras"
-            />
-          </div>
+            <div className="mt-4">
+              <label className="mb-1.5 block text-xs font-medium text-slate-700">
+                Comentario para el pedido
+              </label>
 
-          <div className="mt-5 rounded-xl bg-slate-100 p-4">
-            <p className="text-sm text-slate-600">Cliente</p>
-            <p className="font-semibold">{user.name}</p>
-            <p className="text-sm text-slate-600">{user.email}</p>
-            <div className="mt-4 flex items-center justify-between border-t pt-4">
-              <span className="text-lg font-semibold text-slate-600">
-                Total
-              </span>
-
-              <span className="text-3xl font-extrabold text-slate-900">
-                {formatPrice(total)}
-              </span>
+              <textarea
+                rows="3"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Ejemplo: ojalá maduro el palta 😊"
+                className="w-full resize-none rounded-2xl border border-slate-200 bg-white p-3 text-sm outline-none focus:border-pink-400"
+              />
             </div>
-          </div>
 
-          <button
-            onClick={submitOrder}
-            disabled={sending}
-            className="mt-5 w-full rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-orange-600 disabled:opacity-60"
-          >
+            <div className="mt-4 rounded-[22px] bg-slate-50 p-4">
+              <p className="text-xs text-slate-500">Cliente</p>
+              <p className="mt-1 text-sm font-medium text-slate-900">{user.name}</p>
+              <p className="text-xs text-slate-500">{user.email}</p>
 
-            {sending ? 'Enviando solicitud...' : 'Enviar solicitud de compra'}
-          </button>
+              <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-4">
+                <span className="text-sm font-medium text-slate-700">
+                  Total estimado
+                </span>
 
-          {lastOrderForWhatsApp ? (
+                <span className="text-2xl font-medium text-pink-600">
+                  {formatPrice(total)}
+                </span>
+              </div>
+            </div>
+
             <button
               type="button"
-              onClick={() => sendOrderToWhatsApp(lastOrderForWhatsApp)}
-              className="mt-3 w-full rounded-xl bg-green-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-green-700"
+              onClick={submitOrder}
+              disabled={sending}
+              className="mt-4 flex h-12 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-pink-600 to-orange-500 text-sm font-medium text-white shadow-lg shadow-pink-100 transition hover:-translate-y-0.5 disabled:opacity-60"
             >
-              Enviar pedido por WhatsApp al vendedor
+              {sending ? 'Enviando...' : 'Realizar pedido'}
+              <span className="ml-2 text-lg">→</span>
             </button>
-          ) : null}
 
-
-
-
-
-
-
-        </aside>
-      </div>
+            {lastOrderForWhatsApp ? (
+              <button
+                type="button"
+                onClick={() => sendOrderToWhatsApp(lastOrderForWhatsApp)}
+                className="mt-3 h-12 w-full rounded-2xl bg-green-600 px-4 text-sm font-medium text-white hover:bg-green-700"
+              >
+                Enviar pedido por WhatsApp
+              </button>
+            ) : null}
+          </aside>
+        </div>
+      </section>
 
       <div className="fixed bottom-0 left-0 right-0 z-[80] border-t border-slate-200 bg-white/95 p-3 shadow-2xl backdrop-blur md:hidden">
-        <div className="flex justify-start">
-          <div className="w-[160px]">
-            <SignOutButton />
-          </div>
+        <div className="flex justify-between gap-3">
+
+          <button
+            type="button"
+            onClick={() => {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-pink-100 bg-white text-slate-700 shadow-[0_2px_10px_rgba(0,0,0,0.06)] transition hover:-translate-y-0.5 hover:bg-pink-50"
+            aria-label="Ir al buscador"
+          >
+            <div className="relative">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="7" />
+                <path d="M20 20L16.5 16.5" />
+              </svg>
+
+              <span className="absolute -top-2 left-5 text-[10px] font-bold text-pink-500">
+                ↑
+              </span>
+            </div>
+          </button>
+
+
+
+
+
+
+
+          <button
+            type="button"
+            onClick={() => {
+              const section = document.getElementById('tu-solicitud');
+              if (section) section.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-pink-600 to-orange-500 px-4 py-3 text-sm font-medium text-white shadow-lg shadow-pink-100"
+          >
+            Ver pedido · {formatPrice(total)}
+          </button>
         </div>
       </div>
 
       <FloatingCartButton itemCount={itemCount} />
-
-    </div>
+    </main>
   );
 }
-
-const styles = {
-  searchSection: {
-    width: '100%',
-    backgroundColor: '#fff',
-    borderRadius: '18px',
-    padding: '16px',
-    marginBottom: '18px',
-    boxShadow: '0 8px 24px rgba(15, 23, 42, 0.08)',
-    border: '1px solid #e5e7eb',
-  },
-
-  searchRow: {
-    display: 'flex',
-    gap: '10px',
-    alignItems: 'center',
-    marginBottom: '14px',
-  },
-
-  searchBox: {
-    flex: 1,
-    height: '52px',
-    borderRadius: '14px',
-    border: '1px solid #d1d5db',
-    display: 'flex',
-    alignItems: 'center',
-    padding: '0 14px',
-    backgroundColor: '#f9fafb',
-  },
-
-  searchIcon: {
-    fontSize: '22px',
-    marginRight: '10px',
-    color: '#64748b',
-  },
-
-  searchInput: {
-    width: '100%',
-    border: 'none',
-    outline: 'none',
-    backgroundColor: 'transparent',
-    fontSize: '16px',
-    color: '#0f172a',
-  },
-
-  filterButton: {
-    width: '52px',
-    height: '52px',
-    borderRadius: '50%',
-    border: 'none',
-    backgroundColor: '#dcfce7',
-    color: '#15803d',
-    fontSize: '22px',
-    cursor: 'pointer',
-  },
-
-  categoryRow: {
-    display: 'flex',
-    gap: '10px',
-    overflowX: 'auto',
-    paddingBottom: '4px',
-  },
-
-  categoryButton: {
-    minWidth: '120px',
-    height: '48px',
-    borderRadius: '14px',
-    border: '1px solid #d1d5db',
-    backgroundColor: '#fff',
-    color: '#64748b',
-    fontSize: '15px',
-    fontWeight: 600,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
-  },
-
-  categoryButtonActive: {
-    border: '2px solid #16a34a',
-    backgroundColor: '#f0fdf4',
-    color: '#15803d',
-    boxShadow: '0 6px 18px rgba(22, 163, 74, 0.16)',
-  },
-};

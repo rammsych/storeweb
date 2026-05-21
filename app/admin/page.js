@@ -1,251 +1,350 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import AdminShell from '@/components/AdminShell';
-import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
-import { format, parse, startOfWeek, getDay } from 'date-fns';
-import { es } from 'date-fns/locale/es';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
+import {
+  ShoppingBag,
+  CalendarDays,
+  Users,
+  Banknote,
+  TrendingUp,
+  Package,
+  AlertTriangle,
+  Loader2,
+  ArrowUpRight,
+} from 'lucide-react';
 
-const locales = {
-  es,
-};
-
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek: () => startOfWeek(new Date(), { weekStartsOn: 1 }),
-  getDay,
-  locales,
-});
-
-export default function AdminPage() {
-  const [events, setEvents] = useState([]);
-  const [selectedOrder, setSelectedOrder] = useState(null);
+export default function AdminHomePage() {
+  const [orders, setOrders] = useState([]);
+  const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [calendarView, setCalendarView] = useState('month');
-  const [calendarDate, setCalendarDate] = useState(new Date());
 
   useEffect(() => {
-    loadScheduledOrders();
+    loadDashboard();
   }, []);
 
-  const loadScheduledOrders = async () => {
+  const loadDashboard = async () => {
     try {
       setLoading(true);
 
-      const response = await fetch('/api/admin/scheduled-orders', {
-        cache: 'no-store',
-      });
-      const data = await response.json();
+      const [ordersRes, customersRes] = await Promise.all([
+        fetch('/api/admin/orders', { cache: 'no-store' }),
+        fetch('/api/admin/customers', { cache: 'no-store' }),
+      ]);
 
-      if (!response.ok) {
-        throw new Error(data.error || 'No se pudieron cargar los pedidos');
-      }
+      const ordersData = await ordersRes.json();
+      const customersData = await customersRes.json();
 
-      const formattedEvents = data.map((event) => ({
-        ...event,
-        start: new Date(event.start),
-        end: new Date(event.end),
-      }));
-
-      setEvents(formattedEvents);
+      setOrders(ordersData.orders || []);
+      setCustomers(customersData.customers || []);
     } catch (error) {
-      console.error('Error loading scheduled orders:', error);
+      console.error('Dashboard error:', error);
     } finally {
       setLoading(false);
     }
   };
 
+  const stats = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+
+    const todayOrders = orders.filter((order) =>
+      String(order.createdAt || '').startsWith(today)
+    );
+
+    const todaySales = todayOrders.reduce(
+      (sum, order) => sum + Number(order.totalEstimated || 0),
+      0
+    );
+
+    const pendingOrders = orders.filter((order) =>
+      String(order.status || '').toLowerCase().includes('pend')
+    );
+
+    const scheduledOrders = orders.filter(
+      (order) => order.deliveryType === 'PROGRAMADO'
+    );
+
+    const activeCustomers = customers.filter((customer) => customer.isActive);
+
+    const averageTicket =
+      orders.length > 0
+        ? orders.reduce(
+            (sum, order) => sum + Number(order.totalEstimated || 0),
+            0
+          ) / orders.length
+        : 0;
+
+    return {
+      todaySales,
+      pendingOrders: pendingOrders.length,
+      scheduledOrders: scheduledOrders.length,
+      activeCustomers: activeCustomers.length,
+      averageTicket,
+    };
+  }, [orders, customers]);
+
+  const lastSevenDays = useMemo(() => {
+    const days = [];
+
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+
+      const key = date.toISOString().slice(0, 10);
+
+      const total = orders
+        .filter((order) => String(order.createdAt || '').startsWith(key))
+        .reduce((sum, order) => sum + Number(order.totalEstimated || 0), 0);
+
+      days.push({
+        label: date.toLocaleDateString('es-CL', { weekday: 'short' }),
+        value: total,
+      });
+    }
+
+    return days;
+  }, [orders]);
+
+  const topProducts = useMemo(() => {
+    const map = {};
+
+    orders.forEach((order) => {
+      order.items?.forEach((item) => {
+        if (!map[item.productName]) {
+          map[item.productName] = 0;
+        }
+
+        map[item.productName] += Number(item.quantity || 0);
+      });
+    });
+
+    return Object.entries(map)
+      .map(([name, quantity]) => ({ name, quantity }))
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 4);
+  }, [orders]);
+
+  if (loading) {
+    return (
+      <AdminShell>
+        <div className="flex h-[70vh] flex-col items-center justify-center gap-3 font-['Montserrat',system-ui,sans-serif] text-slate-500">
+          <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+          <p className="text-sm font-medium">Cargando dashboard...</p>
+        </div>
+      </AdminShell>
+    );
+  }
+
   return (
     <AdminShell>
-      <main className="mx-auto max-w-6xl px-4 py-8 pb-28 md:pb-8">
-        <div className="mb-6 rounded-2xl bg-white p-6 shadow">
-          <h1 className="text-3xl font-bold text-green-800">
-            Pedidos Programados
+      <div className="space-y-6 font-['Montserrat',system-ui,sans-serif]">
+        <section className="rounded-[30px] border border-orange-100 bg-white p-6 shadow-[0_10px_35px_rgba(15,23,42,0.04)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-500">
+            Dashboard Bitrineo
+          </p>
+
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
+            Resumen del negocio
           </h1>
 
-          <p className="text-slate-600">
-            Calendario de solicitudes agendadas por fecha y horario.
+          <p className="mt-2 max-w-2xl text-sm text-slate-500">
+            Vista rápida para entender ventas, pedidos pendientes, clientes y comportamiento reciente.
           </p>
-        </div>
-
-        <section className="rounded-2xl bg-white p-4 shadow">
-          {loading ? (
-            <div className="flex h-[500px] items-center justify-center">
-              <p className="font-semibold text-slate-500">
-                Cargando calendario...
-              </p>
-            </div>
-          ) : (
-            // <Calendar
-            //   localizer={localizer}
-            //   events={events}
-            //   startAccessor="start"
-            //   endAccessor="end"
-            //   style={{ height: 650 }}
-            //   culture="es"
-            //   views={['month', 'week', 'day', 'agenda']}
-            //   defaultView="month"
-            //   messages={{
-            //     next: 'Siguiente',
-            //     previous: 'Anterior',
-            //     today: 'Hoy',
-            //     month: 'Mes',
-            //     week: 'Semana',
-            //     day: 'Día',
-            //     agenda: 'Agenda',
-            //     date: 'Fecha',
-            //     time: 'Hora',
-            //     event: 'Pedido',
-            //     noEventsInRange: 'No hay pedidos programados en este rango.',
-
-            //   }}
-            //   onSelectEvent={(event) => setSelectedOrder(event)}
-            // />
-
-
-            <Calendar
-              localizer={localizer}
-              events={events}
-              startAccessor="start"
-              endAccessor="end"
-              style={{ height: 650 }}
-              culture="es"
-              views={['month', 'week', 'day', 'agenda']}
-              view={calendarView}
-              date={calendarDate}
-              onView={(view) => setCalendarView(view)}
-              onNavigate={(date) => setCalendarDate(date)}
-              min={new Date(2026, 0, 1, 14, 0)}
-              max={new Date(2026, 0, 1, 18, 30)}
-              messages={{
-                next: 'Siguiente',
-                previous: 'Anterior',
-                today: 'Hoy',
-                month: 'Mes',
-                week: 'Semana',
-                day: 'Día',
-                agenda: 'Agenda',
-                date: 'Fecha',
-                time: 'Hora',
-                event: 'Pedido',
-                noEventsInRange: 'No hay pedidos programados en este rango.',
-              }}
-              onSelectEvent={(event) => setSelectedOrder(event)}
-            />
-
-
-
-
-
-
-
-
-          )}
         </section>
 
-        {selectedOrder && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4">
-            <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl">
-              <div className="mb-4 flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-2xl font-bold text-green-800">
-                    Detalle del pedido
-                  </h2>
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <KpiCard
+            title="Ventas hoy"
+            value={`$${Number(stats.todaySales).toLocaleString('es-CL')}`}
+            subtitle="Ingresos estimados del día"
+            icon={Banknote}
+          />
 
-                  <p className="text-sm text-slate-500">
-                    Pedido #{selectedOrder.id}
-                  </p>
-                </div>
+          <KpiCard
+            title="Pedidos pendientes"
+            value={stats.pendingOrders}
+            subtitle="Requieren revisión"
+            icon={ShoppingBag}
+          />
 
-                <button
-                  onClick={() => setSelectedOrder(null)}
-                  className="rounded-lg bg-slate-100 px-3 py-2 text-sm font-bold text-slate-600 hover:bg-slate-200"
-                >
-                  Cerrar
-                </button>
-              </div>
+          <KpiCard
+            title="Clientes activos"
+            value={stats.activeCustomers}
+            subtitle="Clientes habilitados"
+            icon={Users}
+          />
 
-              <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
-                <p className="font-bold text-orange-700">
-                  Pedido Programado
-                </p>
+          <KpiCard
+            title="Ticket promedio"
+            value={`$${Number(stats.averageTicket).toLocaleString('es-CL')}`}
+            subtitle="Promedio por pedido"
+            icon={TrendingUp}
+          />
+        </section>
 
-                <p className="mt-1 text-sm">
-                  <strong>Fecha:</strong>{' '}
-                  {selectedOrder.scheduledDeliveryDate}
-                </p>
-
-                <p className="text-sm">
-                  <strong>Horario:</strong>{' '}
-                  {selectedOrder.scheduledDeliveryTime} hrs
-                </p>
-              </div>
-
-              <div className="mt-4 space-y-2 text-sm">
-                <p>
-                  <strong>Cliente:</strong> {selectedOrder.customerName || '-'}
-                </p>
-
-                <p>
-                  <strong>Email:</strong> {selectedOrder.customerEmail || '-'}
-                </p>
-
-                <p>
-                  <strong>Teléfono:</strong> {selectedOrder.customerPhone || '-'}
-                </p>
-
-                <p>
-                  <strong>Dirección:</strong> {selectedOrder.address || '-'}
-                </p>
-
-                <p>
-                  <strong>Comentario:</strong> {selectedOrder.notes || '-'}
-                </p>
-
-                <p>
-                  <strong>Total estimado:</strong> $
-                  {Number(selectedOrder.totalEstimated || 0).toLocaleString('es-CL')}
+        <section className="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
+          <div className="rounded-[30px] border border-orange-100 bg-white p-6 shadow-[0_10px_35px_rgba(15,23,42,0.04)]">
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-950">
+                  Ventas últimos 7 días
+                </h2>
+                <p className="text-sm text-slate-500">
+                  Evolución simple para detectar tendencia.
                 </p>
               </div>
 
-              <div className="mt-5">
-                <h3 className="mb-3 text-lg font-bold text-slate-800">
-                  Productos
-                </h3>
-
-                <div className="space-y-3">
-                  {selectedOrder.items?.map((item) => (
-                    <div
-                      key={item.id}
-                      className="rounded-xl border border-slate-200 bg-slate-50 p-3"
-                    >
-                      <p className="font-semibold text-slate-800">
-                        {item.productName}
-                      </p>
-
-                      <p className="text-sm text-slate-600">
-                        Cantidad: {item.quantity} {item.unitType}
-                      </p>
-
-                      <p className="text-sm text-slate-600">
-                        Precio unitario: $
-                        {Number(item.unitPrice || 0).toLocaleString('es-CL')}
-                      </p>
-
-                      <p className="text-sm font-bold text-green-700">
-                        Subtotal: $
-                        {Number(item.subtotal || 0).toLocaleString('es-CL')}
-                      </p>
-                    </div>
-                  ))}
-                </div>
+              <div className="rounded-full bg-orange-50 px-3 py-1 text-xs font-medium text-orange-600">
+                7 días
               </div>
             </div>
+
+            <SimpleLineChart data={lastSevenDays} />
           </div>
-        )}
-      </main>
+
+          <div className="rounded-[30px] border border-orange-100 bg-white p-6 shadow-[0_10px_35px_rgba(15,23,42,0.04)]">
+            <h2 className="text-lg font-semibold text-slate-950">
+              Productos más vendidos
+            </h2>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Ideal para saber qué reponer primero.
+            </p>
+
+            <div className="mt-5 space-y-3">
+              {topProducts.length === 0 ? (
+                <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">
+                  Aún no hay productos vendidos.
+                </p>
+              ) : (
+                topProducts.map((product, index) => (
+                  <div
+                    key={product.name}
+                    className="flex items-center justify-between rounded-2xl bg-slate-50 p-4"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-50 text-sm font-semibold text-orange-600">
+                        {index + 1}
+                      </div>
+
+                      <div>
+                        <p className="text-sm font-medium text-slate-950">
+                          {product.name}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {product.quantity} unidades
+                        </p>
+                      </div>
+                    </div>
+
+                    <Package className="h-4 w-4 text-orange-500" />
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-3">
+          <InsightCard
+            icon={AlertTriangle}
+            title="Pedidos pendientes"
+            text={`${stats.pendingOrders} pedido(s) necesitan seguimiento.`}
+          />
+
+          <InsightCard
+            icon={CalendarDays}
+            title="Pedidos programados"
+            text={`${stats.scheduledOrders} pedido(s) agendados para entrega.`}
+          />
+
+          <InsightCard
+            icon={ArrowUpRight}
+            title="Acción sugerida"
+            text="Revisa primero pedidos pendientes y productos más vendidos."
+          />
+        </section>
+      </div>
     </AdminShell>
+  );
+}
+
+function KpiCard({ title, value, subtitle, icon: Icon }) {
+  return (
+    <div className="rounded-[28px] border border-orange-100 bg-white p-5 shadow-[0_10px_35px_rgba(15,23,42,0.04)]">
+      <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-orange-500">
+        <Icon className="h-6 w-6" />
+      </div>
+
+      <p className="text-sm font-medium text-slate-500">{title}</p>
+      <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
+        {value}
+      </p>
+      <p className="mt-2 text-xs text-slate-400">{subtitle}</p>
+    </div>
+  );
+}
+
+function InsightCard({ icon: Icon, title, text }) {
+  return (
+    <div className="rounded-[28px] border border-orange-100 bg-white p-5 shadow-[0_10px_35px_rgba(15,23,42,0.04)]">
+      <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 text-orange-500">
+        <Icon className="h-5 w-5" />
+      </div>
+
+      <h3 className="text-sm font-semibold text-slate-950">{title}</h3>
+      <p className="mt-1 text-sm leading-relaxed text-slate-500">{text}</p>
+    </div>
+  );
+}
+
+function SimpleLineChart({ data }) {
+  const max = Math.max(...data.map((item) => item.value), 1);
+
+  const points = data
+    .map((item, index) => {
+      const x = (index / (data.length - 1)) * 100;
+      const y = 100 - (item.value / max) * 80 - 10;
+
+      return `${x},${y}`;
+    })
+    .join(' ');
+
+  return (
+    <div className="overflow-hidden rounded-[24px] bg-orange-50/50 p-5">
+      <svg viewBox="0 0 100 100" className="h-56 w-full">
+        <polyline
+          points={points}
+          fill="none"
+          stroke="#ff5a00"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {data.map((item, index) => {
+          const x = (index / (data.length - 1)) * 100;
+          const y = 100 - (item.value / max) * 80 - 10;
+
+          return (
+            <circle
+              key={item.label}
+              cx={x}
+              cy={y}
+              r="2.5"
+              fill="#ff5a00"
+            />
+          );
+        })}
+      </svg>
+
+      <div className="mt-3 grid grid-cols-7 gap-2 text-center text-xs font-medium text-slate-500">
+        {data.map((item) => (
+          <span key={item.label} className="capitalize">
+            {item.label}
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }

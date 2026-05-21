@@ -82,3 +82,52 @@ button {
   caret-color: white !important;
   transition: background-color 9999s ease-in-out 0s !important;
 }
+
+body {
+  font-family: var(--font-montserrat), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (max-width: 768px) {
+  .rbc-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .rbc-toolbar-label {
+    order: -1;
+    width: 100%;
+    text-align: center;
+    font-size: 14px;
+  }
+
+  .rbc-btn-group {
+    display: grid;
+    grid-auto-flow: column;
+    overflow-x: auto;
+    border-radius: 16px;
+  }
+
+  .rbc-btn-group button {
+    min-width: 86px;
+    padding: 9px 10px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .rbc-month-view,
+  .rbc-time-view,
+  .rbc-agenda-view {
+    border-radius: 18px;
+  }
+
+  .rbc-event {
+    font-size: 11px;
+    padding: 3px 6px !important;
+  }
+}
+
+
+
