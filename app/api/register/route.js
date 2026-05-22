@@ -36,6 +36,8 @@ export async function POST(request) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    console.log("HOTFIX REGISTER ACTIVE - COMMIT 3ffb5f2");
+
     // HOT FIX TEMPORAL PRODUCCIÓN:
     // El schema.prisma de main no conoce companyId,
     // por eso insertamos directo con SQL.
