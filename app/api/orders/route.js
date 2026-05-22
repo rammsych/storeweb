@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import nodemailer from 'nodemailer';
+import crypto from 'crypto';
 
 export async function POST(request) {
   try {
@@ -31,20 +32,13 @@ export async function POST(request) {
       );
     }
 
-
     if (deliveryType === 'PROGRAMADO') {
-
-
-
-
       if (!scheduledDeliveryDate || !scheduledDeliveryTime) {
         return NextResponse.json(
           { error: 'Debes indicar fecha y horario para el pedido programado' },
           { status: 400 }
         );
       }
-
-    
 
       const getChileDateString = (date) => {
         return new Intl.DateTimeFormat('en-CA', {
@@ -56,9 +50,7 @@ export async function POST(request) {
       };
 
       const now = new Date();
-
       const chileTodayString = getChileDateString(now);
-
       const chileToday = new Date(`${chileTodayString}T00:00:00`);
 
       chileToday.setDate(chileToday.getDate() + 1);
@@ -83,10 +75,6 @@ export async function POST(request) {
         );
       }
     }
-
-
-
-
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
@@ -118,28 +106,80 @@ export async function POST(request) {
       };
     });
 
-    const order = await prisma.order.create({
-      data: {
-        userId: user.id,
-        customerName: user.name || '',
-        customerEmail: user.email,
-        customerPhone: user.phone || null,
-        address: user.address || null,
-        latitude: user.latitude ?? null,
-        longitude: user.longitude ?? null,
-        notes: notes || null,
-        status: 'pending',
-        companyId: 1,
-        deliveryType: deliveryType || 'NORMAL',
-        scheduledDeliveryDate: scheduledDeliveryDate
-          ? new Date(`${scheduledDeliveryDate}T00:00:00`)
-          : null,
-        scheduledDeliveryTime: scheduledDeliveryTime || null,
-        totalEstimated,
-        items: {
-          create: normalizedItems,
-        },
-      },
+    const orderId = crypto.randomUUID();
+
+    const scheduledDateValue = scheduledDeliveryDate
+      ? new Date(`${scheduledDeliveryDate}T00:00:00`)
+      : null;
+
+    await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`
+        INSERT INTO "Order" (
+          "id",
+          "userId",
+          "customerName",
+          "customerEmail",
+          "customerPhone",
+          "address",
+          "latitude",
+          "longitude",
+          "notes",
+          "status",
+          "companyId",
+          "deliveryType",
+          "scheduledDeliveryDate",
+          "scheduledDeliveryTime",
+          "totalEstimated",
+          "createdAt"
+        )
+        VALUES (
+          ${orderId},
+          ${user.id},
+          ${user.name || ''},
+          ${user.email},
+          ${user.phone || null},
+          ${user.address || null},
+          ${user.latitude ?? null},
+          ${user.longitude ?? null},
+          ${notes || null},
+          'pending',
+          1,
+          ${deliveryType || 'NORMAL'},
+          ${scheduledDateValue},
+          ${scheduledDeliveryTime || null},
+          ${totalEstimated},
+          NOW()
+        )
+      `;
+
+      for (const item of normalizedItems) {
+        await tx.$executeRaw`
+          INSERT INTO "OrderItem" (
+            "id",
+            "orderId",
+            "productId",
+            "productName",
+            "unitType",
+            "quantity",
+            "unitPrice",
+            "subtotal"
+          )
+          VALUES (
+            ${crypto.randomUUID()},
+            ${orderId},
+            ${item.productId},
+            ${item.productName},
+            ${item.unitType},
+            ${item.quantity},
+            ${item.unitPrice},
+            ${item.subtotal}
+          )
+        `;
+      }
+    });
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
       include: {
         items: true,
       },
