@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { Prisma } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request) {
   try {
@@ -169,7 +169,7 @@ export async function POST(request) {
             ${orderId},
             ${item.productId},
             ${item.productName},
-            Prisma.sql`${item.unitType}::"UnitType"`,
+            ${item.unitType}::"UnitType",
             ${item.quantity},
             ${item.unitPrice},
             ${item.subtotal}
