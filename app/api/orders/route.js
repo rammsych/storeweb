@@ -129,6 +129,7 @@ export async function POST(request) {
         longitude: user.longitude ?? null,
         notes: notes || null,
         status: 'pending',
+        companyId: 1,
         deliveryType: deliveryType || 'NORMAL',
         scheduledDeliveryDate: scheduledDeliveryDate
           ? new Date(`${scheduledDeliveryDate}T00:00:00`)
