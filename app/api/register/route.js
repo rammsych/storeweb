@@ -51,7 +51,11 @@ export async function POST(request) {
         latitude,
         longitude,
         password: hashedPassword,
-        companyId: 1,
+         company: {
+      connect: {
+            id: 1,
+          },
+        },
       },
     });
 
