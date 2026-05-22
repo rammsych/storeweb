@@ -51,6 +51,7 @@ export async function POST(request) {
         latitude,
         longitude,
         password: hashedPassword,
+        companyId: 1,
       },
     });
 
