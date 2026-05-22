@@ -68,7 +68,7 @@ export async function POST(request) {
         ${longitude || null},
         ${hashedPassword},
         1,
-        'USER',
+        'user',
         NOW(),
         NOW(),
         true
