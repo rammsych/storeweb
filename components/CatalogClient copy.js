@@ -9,7 +9,12 @@ import { CalendarDays, Trash2 } from 'lucide-react';
 
 function GiftMinimalIcon({ className = '' }) {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden="true"
+    >
       <path d="M4 10h7v10H4V10Zm9 0h7v10h-7V10ZM3 7h8v2H3V7Zm10 0h8v2h-8V7Z" />
       <path d="M11 4.4C10.35 3.55 9.48 3 8.45 3 6.97 3 6 3.98 6 5.2 6 6.4 7.02 7 8.35 7H11V4.4Zm-2.55.1c.66 0 1.22.43 1.6 1.15V6H8.45C7.78 6 7.3 5.76 7.3 5.2c0-.43.36-.7 1.15-.7ZM13 4.4C13.65 3.55 14.52 3 15.55 3 17.03 3 18 3.98 18 5.2 18 6.4 16.98 7 15.65 7H13V4.4Zm2.55.1c-.66 0-1.22.43-1.6 1.15V6h1.6c.67 0 1.15-.24 1.15-.8 0-.43-.36-.7-1.15-.7Z" />
     </svg>
@@ -36,21 +41,12 @@ export default function CatalogClient({ products, categories = [], user, company
 
   useEffect(() => {
     if (company) {
-      localStorage.setItem('currentCompany', JSON.stringify(company));
+      localStorage.setItem(
+        "currentCompany",
+        JSON.stringify(company)
+      );
     }
   }, [company]);
-
-  function handleLogout() {
-    const storeSlug = company?.slug || '';
-
-    localStorage.removeItem('user');
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('authUser');
-    localStorage.removeItem('token');
-    localStorage.removeItem('jwt');
-
-    window.location.href = storeSlug ? `/${storeSlug}/login` : '/login';
-  }
 
   const dynamicCategories = [
     { id: 'todas', label: 'Todas' },
@@ -60,7 +56,18 @@ export default function CatalogClient({ products, categories = [], user, company
     })),
   ];
 
-  const timeSlots = ['14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30'];
+  const timeSlots = [
+    '14:00',
+    '14:30',
+    '15:00',
+    '15:30',
+    '16:00',
+    '16:30',
+    '17:00',
+    '17:30',
+    '18:00',
+    '18:30',
+  ];
 
   const itemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -71,18 +78,23 @@ export default function CatalogClient({ products, categories = [], user, company
 
   const toggleLike = (productId) => {
     setLikedProducts((prev) => {
-      const updatedLikes = prev.includes(productId)
+      const alreadyLiked = prev.includes(productId);
+
+      const updatedLikes = alreadyLiked
         ? prev.filter((id) => id !== productId)
         : [...prev, productId];
 
       localStorage.setItem('likedProducts', JSON.stringify(updatedLikes));
+
       return updatedLikes;
     });
   };
 
   useEffect(() => {
     const savedLikes = localStorage.getItem('likedProducts');
-    if (savedLikes) setLikedProducts(JSON.parse(savedLikes));
+    if (savedLikes) {
+      setLikedProducts(JSON.parse(savedLikes));
+    }
   }, []);
 
   useEffect(() => {
@@ -113,7 +125,8 @@ export default function CatalogClient({ products, categories = [], user, company
 
       return {
         ...current,
-        [productId]: action === 'minus' ? Math.max(1, currentQty - 1) : currentQty + 1,
+        [productId]:
+          action === 'minus' ? Math.max(1, currentQty - 1) : currentQty + 1,
       };
     });
   }
@@ -127,7 +140,12 @@ export default function CatalogClient({ products, categories = [], user, company
       if (existing) {
         return current.map((item) =>
           item.productId === product.id
-            ? { ...item, quantity: Number((item.quantity + selectedQuantity).toFixed(2)) }
+            ? {
+              ...item,
+              quantity: Number(
+                (item.quantity + selectedQuantity).toFixed(2)
+              ),
+            }
             : item
         );
       }
@@ -161,7 +179,9 @@ export default function CatalogClient({ products, categories = [], user, company
 
     setCart((current) =>
       current
-        .map((item) => (item.productId === productId ? { ...item, quantity: parsed } : item))
+        .map((item) =>
+          item.productId === productId ? { ...item, quantity: parsed } : item
+        )
         .filter((item) => item.quantity > 0)
     );
   }
@@ -209,31 +229,51 @@ ${order.note || 'Sin comentarios'}
 
   async function submitOrder() {
     if (cart.length === 0) {
-      setToast({ open: true, message: 'Debes agregar al menos un producto.', type: 'error' });
+      setToast({
+        open: true,
+        message: 'Debes agregar al menos un producto.',
+        type: 'error',
+      });
       return;
     }
 
     if (!scheduledDate || !scheduledTime) {
-      setToast({ open: true, message: 'Debes seleccionar fecha y horario del pedido.', type: 'error' });
+      setToast({
+        open: true,
+        message: 'Debes seleccionar fecha y horario del pedido.',
+        type: 'error',
+      });
       return;
     }
 
     const minScheduledDate = getMinScheduledDate();
 
     if (scheduledDate < minScheduledDate) {
-      setToast({ open: true, message: 'Solo puedes seleccionar fechas desde el próximo día disponible.', type: 'error' });
+      setToast({
+        open: true,
+        message: 'Solo puedes seleccionar fechas desde el próximo día disponible.',
+        type: 'error',
+      });
       return;
     }
 
     if (scheduledTime < '14:00' || scheduledTime > '18:30') {
-      setToast({ open: true, message: 'Solo puedes seleccionar horarios entre 14:00 y 18:30 hrs.', type: 'error' });
+      setToast({
+        open: true,
+        message: 'Solo puedes seleccionar horarios entre 14:00 y 18:30 hrs.',
+        type: 'error',
+      });
       return;
     }
 
     const currentCompany = JSON.parse(localStorage.getItem('currentCompany'));
 
     if (!currentCompany?.id) {
-      setToast({ open: true, message: 'No se pudo identificar la tienda del pedido.', type: 'error' });
+      setToast({
+        open: true,
+        message: 'No se pudo identificar la tienda del pedido.',
+        type: 'error',
+      });
       return;
     }
 
@@ -304,7 +344,8 @@ ${order.note || 'Sin comentarios'}
       product.description?.toLowerCase().includes(text) ||
       productCategory?.includes(text);
 
-    const matchesCategory = selectedCategory === 'todas' || productCategory === selectedCategory;
+    const matchesCategory =
+      selectedCategory === 'todas' || productCategory === selectedCategory;
 
     return matchesText && matchesCategory;
   });
@@ -322,14 +363,16 @@ ${order.note || 'Sin comentarios'}
         <header className="mb-4 w-full rounded-[24px] border border-slate-200 bg-white px-4 py-4 shadow-[0_2px_10px_rgba(0,0,0,0.04)]">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <Image
-                src="/logo-navbar.png"
-                alt="Bitrineo"
-                width={720}
-                height={180}
-                priority
-                className="h-auto w-[170px] object-contain sm:w-[220px] lg:w-[260px]"
-              />
+              <div className="flex items-center">
+                <Image
+                  src="/logo-navbar.png"
+                  alt="Bitrineo"
+                  width={720}
+                  height={180}
+                  priority
+                  className="h-auto w-[170px] object-contain sm:w-[220px] lg:w-[260px]"
+                />
+              </div>
             </div>
 
             <div className="flex shrink-0 items-center gap-2 rounded-2xl bg-white px-1">
@@ -339,7 +382,14 @@ ${order.note || 'Sin comentarios'}
                 className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-900 transition hover:bg-slate-50"
                 aria-label="Usuario"
               >
-                <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  width="21"
+                  height="21"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <path d="M20 21a8 8 0 0 0-16 0" />
                   <circle cx="12" cy="8" r="4" />
                 </svg>
@@ -347,12 +397,20 @@ ${order.note || 'Sin comentarios'}
 
               <button
                 type="button"
-                onClick={handleLogout}
+                onClick={() => {
+                  window.location.href = `/logout?store=${company?.slug || ''}`;
+                }}
                 className="flex h-10 w-10 items-center justify-center rounded-xl text-pink-500 transition hover:bg-pink-50"
                 aria-label="Cerrar sesión"
-                title="Cerrar sesión"
               >
-                <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  width="21"
+                  height="21"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
                   <path d="M10 17l5-5-5-5" />
                   <path d="M15 12H3" />
@@ -366,7 +424,16 @@ ${order.note || 'Sin comentarios'}
                   aria-label="Panel administrador"
                   className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-900 transition hover:bg-slate-50"
                 >
-                  <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    width="21"
+                    height="21"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <rect x="3" y="7" width="18" height="13" rx="2" />
                     <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                   </svg>
@@ -380,7 +447,14 @@ ${order.note || 'Sin comentarios'}
           <section className="w-full min-w-0 overflow-x-hidden rounded-[28px] border border-slate-200 bg-white/75 px-3 pb-3 pt-1 shadow-[0_2px_10px_rgba(0,0,0,0.04)] sm:p-4 lg:p-5">
             <div className="mb-3 flex h-12 w-full items-center rounded-2xl border border-slate-200 bg-white px-4 shadow-[0_2px_10px_rgba(0,0,0,0.04)]">
               <div className="mr-3 flex h-8 w-8 items-center justify-center rounded-xl bg-slate-50 text-slate-500">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <circle cx="11" cy="11" r="7" />
                   <path d="M20 20L16.5 16.5" />
                 </svg>
@@ -404,11 +478,10 @@ ${order.note || 'Sin comentarios'}
                     key={category.id}
                     type="button"
                     onClick={() => setSelectedCategory(category.id)}
-                    className={`flex h-10 shrink-0 items-center gap-2 rounded-2xl border px-4 text-xs transition ${
-                      active
-                        ? 'border-pink-300 bg-pink-50 text-pink-600'
-                        : 'border-slate-100 bg-white text-slate-500'
-                    }`}
+                    className={`flex h-10 shrink-0 items-center gap-2 rounded-2xl border px-4 text-xs transition ${active
+                      ? 'border-pink-300 bg-pink-50 text-pink-600'
+                      : 'border-slate-100 bg-white text-slate-500'
+                      }`}
                   >
                     <GiftMinimalIcon className="h-3.5 w-3.5" />
                     {category.label}
@@ -418,13 +491,20 @@ ${order.note || 'Sin comentarios'}
             </div>
 
             <div className="mb-4">
-              <h2 className="text-2xl font-semibold tracking-tight text-slate-950">Productos</h2>
-              <p className="mt-1 text-xs text-slate-400">{filteredProducts.length} productos disponibles</p>
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
+                Productos
+              </h2>
+              <p className="mt-1 text-xs text-slate-400">
+                {filteredProducts.length} productos disponibles
+              </p>
             </div>
 
             <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {filteredProducts.map((product) => (
-                <article key={product.id} className="relative overflow-hidden rounded-2xl bg-white shadow">
+                <article
+                  key={product.id}
+                  className="relative overflow-hidden rounded-2xl bg-white shadow"
+                >
                   <div className="relative w-full overflow-hidden bg-slate-50">
                     <img
                       src={product.imageUrl || '/placeholder-product.png'}
@@ -450,7 +530,9 @@ ${order.note || 'Sin comentarios'}
                         justifyContent: 'center',
                         cursor: 'pointer',
                         boxShadow: '0 8px 20px rgba(15, 23, 42, 0.12)',
-                        color: likedProducts.includes(product.id) ? '#ec407a' : '#64748b',
+                        color: likedProducts.includes(product.id)
+                          ? '#ec407a'
+                          : '#64748b',
                         fontSize: '18px',
                         transition: 'all 0.2s ease',
                         zIndex: 20,
@@ -462,20 +544,33 @@ ${order.note || 'Sin comentarios'}
                   </div>
 
                   <div className="p-4">
-                    <h3 className="line-clamp-1 text-base font-medium text-slate-950">{product.name}</h3>
+                    <h3 className="line-clamp-1 text-base font-medium text-slate-950">
+                      {product.name}
+                    </h3>
 
                     {product.description ? (
-                      <p className="mt-1 line-clamp-1 text-xs text-slate-400">{product.description}</p>
+                      <p className="mt-1 line-clamp-1 text-xs text-slate-400">
+                        {product.description}
+                      </p>
                     ) : null}
 
                     <div className="mt-3 flex items-baseline gap-1">
-                      <span className="text-2xl font-medium text-pink-600">{formatPrice(product.price)}</span>
-                      <span className="text-xs text-slate-400">/{getUnitLabel(product.unitType)}</span>
+                      <span className="text-2xl font-medium text-pink-600">
+                        {formatPrice(product.price)}
+                      </span>
+
+                      <span className="text-xs text-slate-400">
+                        /{getUnitLabel(product.unitType)}
+                      </span>
                     </div>
 
                     <div className="mt-4 flex items-center justify-between gap-3">
                       <div className="flex h-10 min-w-[120px] items-center justify-center rounded-full border border-slate-200 bg-pink-50">
-                        <button type="button" onClick={() => changeProductQty(product.id, 'minus')} className="flex h-10 w-10 items-center justify-center text-sm text-slate-500">
+                        <button
+                          type="button"
+                          onClick={() => changeProductQty(product.id, 'minus')}
+                          className="flex h-10 w-10 items-center justify-center text-sm text-slate-500"
+                        >
                           −
                         </button>
 
@@ -483,7 +578,11 @@ ${order.note || 'Sin comentarios'}
                           {productQuantities[product.id] || 1}
                         </div>
 
-                        <button type="button" onClick={() => changeProductQty(product.id, 'plus')} className="flex h-10 w-10 items-center justify-center text-sm text-slate-500">
+                        <button
+                          type="button"
+                          onClick={() => changeProductQty(product.id, 'plus')}
+                          className="flex h-10 w-10 items-center justify-center text-sm text-slate-500"
+                        >
                           +
                         </button>
                       </div>
@@ -507,9 +606,14 @@ ${order.note || 'Sin comentarios'}
             </div>
           </section>
 
-          <aside id="tu-solicitud" className="h-fit w-full min-w-0 rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_14px_45px_rgba(15,23,42,0.065)] xl:sticky xl:top-5">
+          <aside
+            id="tu-solicitud"
+            className="h-fit w-full min-w-0 rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_14px_45px_rgba(15,23,42,0.065)] xl:sticky xl:top-5"
+          >
             <div className="mb-4 border-b border-slate-100 pb-4">
-              <h2 className="text-2xl font-semibold tracking-tight text-slate-950">Tu pedido</h2>
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
+                Tu pedido
+              </h2>
               <p className="mt-1 text-xs text-slate-400">
                 {itemCount > 0
                   ? `${itemCount} producto${itemCount === 1 ? '' : 's'} en tu pedido`
@@ -524,10 +628,15 @@ ${order.note || 'Sin comentarios'}
                 </div>
               ) : (
                 cart.map((item) => {
-                  const productInfo = products.find((p) => p.id === item.productId);
+                  const productInfo = products.find(
+                    (p) => p.id === item.productId
+                  );
 
                   return (
-                    <div key={item.productId} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-2.5 shadow-[0_2px_10px_rgba(0,0,0,0.04)]">
+                    <div
+                      key={item.productId}
+                      className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-2.5 shadow-[0_2px_10px_rgba(0,0,0,0.04)]"
+                    >
                       <img
                         src={productInfo?.imageUrl || '/placeholder-product.png'}
                         alt={item.productName}
@@ -535,18 +644,36 @@ ${order.note || 'Sin comentarios'}
                       />
 
                       <div className="min-w-0 flex-1">
-                        <h3 className="line-clamp-1 text-xs font-medium text-slate-900">{item.productName}</h3>
-                        <p className="mt-0.5 text-xs font-medium text-pink-600">{formatPrice(item.unitPrice)}</p>
+                        <h3 className="line-clamp-1 text-xs font-medium text-slate-900">
+                          {item.productName}
+                        </h3>
+                        <p className="mt-0.5 text-xs font-medium text-pink-600">
+                          {formatPrice(item.unitPrice)}
+                        </p>
                       </div>
 
                       <div className="flex h-8 items-center rounded-full border border-slate-200 bg-slate-50">
-                        <button type="button" onClick={() => updateQuantity(item.productId, item.quantity - 1)} className="h-8 w-7 text-sm text-slate-500">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateQuantity(item.productId, item.quantity - 1)
+                          }
+                          className="h-8 w-7 text-sm text-slate-500"
+                        >
                           −
                         </button>
 
-                        <div className="flex h-8 w-6 items-center justify-center text-xs font-medium">{item.quantity}</div>
+                        <div className="flex h-8 w-6 items-center justify-center text-xs font-medium">
+                          {item.quantity}
+                        </div>
 
-                        <button type="button" onClick={() => updateQuantity(item.productId, item.quantity + 1)} className="h-8 w-7 text-sm text-slate-500">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateQuantity(item.productId, item.quantity + 1)
+                          }
+                          className="h-8 w-7 text-sm text-slate-500"
+                        >
                           +
                         </button>
                       </div>
@@ -571,12 +698,16 @@ ${order.note || 'Sin comentarios'}
                   <CalendarDays size={18} strokeWidth={1.8} />
                 </div>
 
-                <h3 className="text-base font-medium text-orange-600">Entrega programada</h3>
+                <h3 className="text-base font-medium text-orange-600">
+                  Entrega programada
+                </h3>
               </div>
 
               <div className="space-y-3">
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-700">Fecha de entrega</label>
+                  <label className="mb-1.5 block text-xs font-medium text-slate-700">
+                    Fecha de entrega
+                  </label>
 
                   <input
                     type="date"
@@ -588,7 +719,9 @@ ${order.note || 'Sin comentarios'}
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-700">Horario de entrega</label>
+                  <label className="mb-1.5 block text-xs font-medium text-slate-700">
+                    Horario de entrega
+                  </label>
 
                   <select
                     value={scheduledTime}
@@ -607,7 +740,9 @@ ${order.note || 'Sin comentarios'}
             </div>
 
             <div className="mt-4">
-              <label className="mb-1.5 block text-xs font-medium text-slate-700">Comentario para el pedido</label>
+              <label className="mb-1.5 block text-xs font-medium text-slate-700">
+                Comentario para el pedido
+              </label>
 
               <textarea
                 rows="3"
@@ -620,12 +755,19 @@ ${order.note || 'Sin comentarios'}
 
             <div className="mt-4 rounded-[22px] bg-slate-50 p-4">
               <p className="text-xs text-slate-500">Cliente</p>
-              <p className="mt-1 text-sm font-medium text-slate-900">{user.name}</p>
+              <p className="mt-1 text-sm font-medium text-slate-900">
+                {user.name}
+              </p>
               <p className="text-xs text-slate-500">{user.email}</p>
 
               <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-4">
-                <span className="text-sm font-medium text-slate-700">Total estimado</span>
-                <span className="text-2xl font-medium text-pink-600">{formatPrice(total)}</span>
+                <span className="text-sm font-medium text-slate-700">
+                  Total estimado
+                </span>
+
+                <span className="text-2xl font-medium text-pink-600">
+                  {formatPrice(total)}
+                </span>
               </div>
             </div>
 
@@ -656,17 +798,30 @@ ${order.note || 'Sin comentarios'}
         <div className="flex justify-between gap-3">
           <button
             type="button"
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            onClick={() => {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
             className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-pink-100 bg-white text-slate-700 shadow-[0_2px_10px_rgba(0,0,0,0.06)] transition hover:-translate-y-0.5 hover:bg-pink-50"
             aria-label="Ir al buscador"
           >
             <div className="relative">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <circle cx="11" cy="11" r="7" />
                 <path d="M20 20L16.5 16.5" />
               </svg>
 
-              <span className="absolute -top-2 left-5 text-[10px] font-bold text-pink-500">↑</span>
+              <span className="absolute -top-2 left-5 text-[10px] font-bold text-pink-500">
+                ↑
+              </span>
             </div>
           </button>
 
