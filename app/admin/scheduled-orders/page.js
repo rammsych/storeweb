@@ -1,6 +1,7 @@
 'use client';
+export const dynamic = 'force-dynamic';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import AdminShell from '@/components/AdminShell';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
@@ -30,7 +31,7 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-export default function ScheduledOrdersPage() {
+function ScheduledOrdersPageContent() {
   const [events, setEvents] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -45,7 +46,15 @@ export default function ScheduledOrdersPage() {
     try {
       setLoading(true);
 
-      const response = await fetch('/api/admin/scheduled-orders', {
+      const params = new URLSearchParams(window.location.search);
+
+      const companyId = params.get('companyId');
+
+      const url = companyId
+        ? `/api/admin/scheduled-orders?companyId=${encodeURIComponent(companyId)}`
+        : '/api/admin/scheduled-orders';
+
+      const response = await fetch(url, {
         cache: 'no-store',
       });
 
@@ -526,11 +535,10 @@ function OrderModal({ selectedOrder, onClose }) {
 function InfoCard({ icon: Icon, label, value, accent = false }) {
   return (
     <div
-      className={`rounded-[22px] border p-4 ${
-        accent
+      className={`rounded-[22px] border p-4 ${accent
           ? 'border-orange-100 bg-orange-50/60'
           : 'border-slate-100 bg-slate-50'
-      }`}
+        }`}
     >
       <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-orange-500 shadow-sm">
         <Icon className="h-5 w-5" />
@@ -558,5 +566,13 @@ function InfoLine({ icon: Icon, label, value }) {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function ScheduledOrdersPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-center">Cargando...</div>}>
+      <ScheduledOrdersPageContent />
+    </Suspense>
   );
 }

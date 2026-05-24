@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
   LayoutDashboard,
   Package,
@@ -10,6 +10,7 @@ import {
   ArrowLeft,
   CalendarDays,
   LogOut,
+  Store,
 } from 'lucide-react';
 
 const menuItems = [
@@ -42,12 +43,40 @@ const menuItems = [
 
 export default function AdminShell({ children }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const companyName = searchParams.get('companyName');
+  const fromSuperAdmin =
+    searchParams.get('fromSuperAdmin') === '1';
+
+  const exitHref = fromSuperAdmin
+    ? '/super-admin'
+    : '/catalog';
+
+  const companyId = searchParams.get('companyId');
+
+  const getAdminHref = (href) => {
+    if (!fromSuperAdmin || !companyId || !companyName) {
+      return href;
+    }
+
+    const params = new URLSearchParams({
+      companyId,
+      companyName,
+      fromSuperAdmin: '1',
+    });
+
+    return `${href}?${params.toString()}`;
+  };
+
+
+
 
   return (
     <div className="min-h-screen bg-[#faf7f4] text-slate-950">
       <div className="flex min-h-screen">
         <aside className="hidden w-[280px] shrink-0 border-r border-orange-100 bg-white px-6 py-7 shadow-[8px_0_30px_rgba(15,23,42,0.04)] md:flex md:flex-col">
-          <Link href="/admin" className="mb-10 flex items-center gap-3">
+          <Link href={getAdminHref('/admin')} className="mb-10 flex items-center gap-3">
             <img
               src="/logo-navbar.png"
               alt="Bitrineo"
@@ -63,10 +92,10 @@ export default function AdminShell({ children }) {
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={getAdminHref(item.href)}
                   className={`flex items-center gap-4 rounded-2xl px-5 py-4 text-[15px] font-semibold transition-all ${active
-                    ? 'bg-gradient-to-r from-[#ff6a00] to-[#ff8a1f] text-white shadow-lg shadow-orange-500/25'
-                    : 'text-slate-600 hover:bg-orange-50 hover:text-orange-600'
+                      ? 'bg-gradient-to-r from-[#ff6a00] to-[#ff8a1f] text-white shadow-lg shadow-orange-500/25'
+                      : 'text-slate-600 hover:bg-orange-50 hover:text-orange-600'
                     }`}
                 >
                   <Icon className="h-5 w-5" />
@@ -90,48 +119,21 @@ export default function AdminShell({ children }) {
             </p>
 
             <Link
-              href="/catalog"
+              href={exitHref}
               className="mt-4 flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-orange-600 shadow-sm transition hover:bg-orange-500 hover:text-white"
             >
-              Ver catálogo
-              <ArrowLeft className="h-4 w-4 rotate-180" />
+              Salir
+              <ArrowLeft className="h-4 w-4" />
             </Link>
           </div>
         </aside>
 
         <div className="min-w-0 flex-1 pb-24 md:pb-0">
           <header className="sticky top-0 z-40 border-b border-orange-100/70 bg-white/95 px-4 py-3 backdrop-blur-xl md:px-10 md:py-4">
-            {/* <div className="flex items-center justify-between">
-              <div className="md:hidden">
-                <img
-                  src="/logo-navbar.png"
-                  alt="Bitrineo"
-                  className="h-11 w-auto object-contain"
-                />
-              </div>
-
-              <div className="hidden md:block">
-                <p className="text-sm font-medium text-slate-400">
-                  Tu vitrina digital inteligente
-                </p>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <p className="hidden text-sm font-semibold text-slate-700 sm:block">
-                  Hola, Tienda!
-                </p>
-
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-orange-600 text-sm font-black text-white shadow-lg shadow-orange-500/20">
-                  B
-                </div>
-              </div>
-            </div> */}
-
-
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <Link
-                  href="/catalog"
+                  href={exitHref}
                   aria-label="Salir del administrador"
                   title="Salir del administrador"
                   className="flex h-10 w-10 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50 text-orange-500 transition hover:bg-orange-100 md:hidden"
@@ -156,6 +158,36 @@ export default function AdminShell({ children }) {
             </div>
           </header>
 
+          {companyName && (
+            <section className="border-b border-orange-100 bg-orange-50/60 px-4 py-4 md:px-10">
+              <div className="flex flex-col gap-4 rounded-[28px] border border-orange-100 bg-white px-5 py-5 shadow-[0_10px_35px_rgba(15,23,42,0.04)] sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500 text-white">
+                    <Store className="h-5 w-5" />
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-500">
+                      Empresa administrada
+                    </p>
+
+                    <h2 className="mt-1 text-xl font-semibold text-slate-950">
+                      {companyName}
+                    </h2>
+                  </div>
+                </div>
+
+                <Link
+                  href="/super-admin"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-orange-200 bg-orange-50 px-5 py-3 text-sm font-medium text-orange-600 transition hover:bg-orange-500 hover:text-white"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Salir
+                </Link>
+              </div>
+            </section>
+          )}
+
           <main className="px-4 py-6 md:px-10 md:py-8">
             {children}
           </main>
@@ -171,10 +203,10 @@ export default function AdminShell({ children }) {
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={getAdminHref(item.href)}
                 className={`flex flex-col items-center justify-center rounded-2xl py-2 text-[11px] font-semibold ${active
-                  ? 'bg-orange-500 text-white'
-                  : 'text-slate-500'
+                    ? 'bg-orange-500 text-white'
+                    : 'text-slate-500'
                   }`}
               >
                 <Icon className="mb-1 h-5 w-5" />
@@ -182,8 +214,6 @@ export default function AdminShell({ children }) {
               </Link>
             );
           })}
-
-
         </div>
       </div>
     </div>

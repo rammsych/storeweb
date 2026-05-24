@@ -10,6 +10,39 @@ datasource db {
 enum UserRole {
   CUSTOMER
   ADMIN
+  SUPER_ADMIN
+}
+
+enum UnitType {
+  UNIT
+  KG
+  BUNDLE
+}
+
+enum OrderStatus {
+  PENDING
+  REVIEWED
+}
+
+model Company {
+  id               BigInt   @id @default(autoincrement())
+  name             String
+  slug             String   @unique
+  address          String?
+  responsible_name String?
+  email            String?
+  phone            String?
+  logo_url         String?
+  status           Boolean  @default(true)
+  maintenanceMode  Boolean  @default(false) @map("maintenance_mode")
+  created_at       DateTime @default(now())
+
+  users      User[]
+  products   Product[]
+  categories ProductCategory[]
+  orders     Order[]
+
+  @@map("companies")
 }
 
 model User {
@@ -23,11 +56,25 @@ model User {
   longitude Float?
   role      UserRole @default(CUSTOMER)
   createdAt DateTime @default(now())
-  updatedAt  DateTime  @updatedAt
-  isActive Boolean @default(true)
+  updatedAt DateTime @updatedAt
+  isActive  Boolean  @default(true)
+
+  companyId BigInt?
+  company   Company? @relation(fields: [companyId], references: [id])
 
   orders Order[]
+}
 
+model ProductCategory {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  companyId BigInt?
+  company   Company? @relation(fields: [companyId], references: [id])
+
+  products Product[]
 }
 
 model Product {
@@ -41,44 +88,38 @@ model Product {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  categoryId  String?
+  companyId BigInt?
+  company   Company? @relation(fields: [companyId], references: [id])
+
+  categoryId String?
+  category   ProductCategory? @relation(fields: [categoryId], references: [id])
+
+  items OrderItem[]
 }
 
 model Order {
-  id             String   @id @default(cuid())
-  userId         String
-  customerName   String
-  customerEmail  String
-  customerPhone  String?
-  address        String?
-  latitude       Float?
-  longitude      Float?
-  notes          String?
-  status         String   @default("pending")
-  totalEstimated Float?
-  createdAt      DateTime @default(now())
-  deliveryType String @default("NORMAL")
+  id                    String   @id @default(cuid())
+  userId                String
+  customerName          String
+  customerEmail         String
+  customerPhone         String?
+  address               String?
+  latitude              Float?
+  longitude             Float?
+  notes                 String?
+  status                String   @default("pending")
+  totalEstimated        Float?
+  createdAt             DateTime @default(now())
+  deliveryType          String   @default("NORMAL")
   scheduledDeliveryDate DateTime?
   scheduledDeliveryTime String?
+
+  companyId BigInt?
+  company   Company? @relation(fields: [companyId], references: [id])
 
   user  User        @relation(fields: [userId], references: [id])
   items OrderItem[]
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 model OrderItem {
   id          String   @id @default(cuid())
@@ -90,16 +131,6 @@ model OrderItem {
   unitPrice   Float
   subtotal    Float
 
-  order Order @relation(fields: [orderId], references: [id])
-}
-
-enum UnitType {
-  UNIT
-  KG
-  BUNDLE
-}
-
-enum OrderStatus {
-  PENDING
-  REVIEWED
+  order   Order   @relation(fields: [orderId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
 }

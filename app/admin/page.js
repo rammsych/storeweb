@@ -1,6 +1,7 @@
 'use client';
+export const dynamic = 'force-dynamic';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, Suspense } from 'react';
 import AdminShell from '@/components/AdminShell';
 import {
   ShoppingBag,
@@ -14,7 +15,7 @@ import {
   ArrowUpRight,
 } from 'lucide-react';
 
-export default function AdminHomePage() {
+function AdminHomePageContent() {
   const [orders, setOrders] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,9 +28,21 @@ export default function AdminHomePage() {
     try {
       setLoading(true);
 
+      const params = new URLSearchParams(window.location.search);
+
+      const companyId = params.get('companyId');
+
+      const ordersUrl = companyId
+        ? `/api/admin/orders?companyId=${encodeURIComponent(companyId)}`
+        : '/api/admin/orders';
+
+      const customersUrl = companyId
+        ? `/api/admin/customers?companyId=${encodeURIComponent(companyId)}`
+        : '/api/admin/customers';
+
       const [ordersRes, customersRes] = await Promise.all([
-        fetch('/api/admin/orders', { cache: 'no-store' }),
-        fetch('/api/admin/customers', { cache: 'no-store' }),
+        fetch(ordersUrl, { cache: 'no-store' }),
+        fetch(customersUrl, { cache: 'no-store' }),
       ]);
 
       const ordersData = await ordersRes.json();
@@ -69,9 +82,9 @@ export default function AdminHomePage() {
     const averageTicket =
       orders.length > 0
         ? orders.reduce(
-            (sum, order) => sum + Number(order.totalEstimated || 0),
-            0
-          ) / orders.length
+          (sum, order) => sum + Number(order.totalEstimated || 0),
+          0
+        ) / orders.length
         : 0;
 
     return {
@@ -346,5 +359,13 @@ function SimpleLineChart({ data }) {
         ))}
       </div>
     </div>
+  );
+}
+
+export default function AdminHomePage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-center">Cargando...</div>}>
+      <AdminHomePageContent />
+    </Suspense>
   );
 }

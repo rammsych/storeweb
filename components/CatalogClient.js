@@ -5,8 +5,23 @@ import { formatPrice, getUnitLabel } from '@/lib/format';
 import FloatingCartButton from '@/components/FloatingCartButton';
 import MobileToast from '@/components/MobileToast';
 import Image from 'next/image';
+import { CalendarDays, Trash2 } from 'lucide-react';
 
-export default function CatalogClient({ products, user }) {
+function GiftMinimalIcon({ className = '' }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M4 10h7v10H4V10Zm9 0h7v10h-7V10ZM3 7h8v2H3V7Zm10 0h8v2h-8V7Z" />
+      <path d="M11 4.4C10.35 3.55 9.48 3 8.45 3 6.97 3 6 3.98 6 5.2 6 6.4 7.02 7 8.35 7H11V4.4Zm-2.55.1c.66 0 1.22.43 1.6 1.15V6H8.45C7.78 6 7.3 5.76 7.3 5.2c0-.43.36-.7 1.15-.7ZM13 4.4C13.65 3.55 14.52 3 15.55 3 17.03 3 18 3.98 18 5.2 18 6.4 16.98 7 15.65 7H13V4.4Zm2.55.1c-.66 0-1.22.43-1.6 1.15V6h1.6c.67 0 1.15-.24 1.15-.8 0-.43-.36-.7-1.15-.7Z" />
+    </svg>
+  );
+}
+
+export default function CatalogClient({ products, categories = [], user, company }) {
   const [cart, setCart] = useState([]);
   const [productQuantities, setProductQuantities] = useState({});
   const [note, setNote] = useState('');
@@ -16,6 +31,7 @@ export default function CatalogClient({ products, user }) {
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('todas');
   const [lastOrderForWhatsApp, setLastOrderForWhatsApp] = useState(null);
+  const [likedProducts, setLikedProducts] = useState([]);
 
   const [toast, setToast] = useState({
     open: false,
@@ -23,15 +39,35 @@ export default function CatalogClient({ products, user }) {
     type: 'success',
   });
 
-  const categories = [
-    { id: 'todas', label: 'Todas', icon: '▦' },
-    { id: 'verduras', label: 'Verduras', icon: '🥬' },
-    { id: 'frutas', label: 'Frutas', icon: '🍎' },
-    { id: 'limpieza', label: 'Limpieza', icon: '🧴' },
-    { id: 'abarrotes', label: 'Abarrotes', icon: '🥫' },
+  useEffect(() => {
+    if (company) {
+      localStorage.setItem(
+        "currentCompany",
+        JSON.stringify(company)
+      );
+    }
+  }, [company]);
+
+  const dynamicCategories = [
+    { id: 'todas', label: 'Todas' },
+    ...(categories || []).map((category) => ({
+      id: category.id,
+      label: category.label || category.name,
+    })),
   ];
 
-  const timeSlots = ['14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30'];
+  const timeSlots = [
+    '14:00',
+    '14:30',
+    '15:00',
+    '15:30',
+    '16:00',
+    '16:30',
+    '17:00',
+    '17:30',
+    '18:00',
+    '18:30',
+  ];
 
   const itemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -40,11 +76,34 @@ export default function CatalogClient({ products, user }) {
     [cart]
   );
 
+  const toggleLike = (productId) => {
+    setLikedProducts((prev) => {
+      const alreadyLiked = prev.includes(productId);
+
+      const updatedLikes = alreadyLiked
+        ? prev.filter((id) => id !== productId)
+        : [...prev, productId];
+
+      localStorage.setItem('likedProducts', JSON.stringify(updatedLikes));
+
+      return updatedLikes;
+    });
+  };
+
+  useEffect(() => {
+    const savedLikes = localStorage.getItem('likedProducts');
+    if (savedLikes) {
+      setLikedProducts(JSON.parse(savedLikes));
+    }
+  }, []);
+
   useEffect(() => {
     if (!toast.open) return;
+
     const timer = setTimeout(() => {
       setToast((current) => ({ ...current, open: false }));
     }, 2500);
+
     return () => clearTimeout(timer);
   }, [toast.open]);
 
@@ -66,7 +125,8 @@ export default function CatalogClient({ products, user }) {
 
       return {
         ...current,
-        [productId]: action === 'minus' ? Math.max(1, currentQty - 1) : currentQty + 1,
+        [productId]:
+          action === 'minus' ? Math.max(1, currentQty - 1) : currentQty + 1,
       };
     });
   }
@@ -80,7 +140,12 @@ export default function CatalogClient({ products, user }) {
       if (existing) {
         return current.map((item) =>
           item.productId === product.id
-            ? { ...item, quantity: Number((item.quantity + selectedQuantity).toFixed(2)) }
+            ? {
+              ...item,
+              quantity: Number(
+                (item.quantity + selectedQuantity).toFixed(2)
+              ),
+            }
             : item
         );
       }
@@ -164,24 +229,51 @@ ${order.note || 'Sin comentarios'}
 
   async function submitOrder() {
     if (cart.length === 0) {
-      setToast({ open: true, message: 'Debes agregar al menos un producto.', type: 'error' });
+      setToast({
+        open: true,
+        message: 'Debes agregar al menos un producto.',
+        type: 'error',
+      });
       return;
     }
 
     if (!scheduledDate || !scheduledTime) {
-      setToast({ open: true, message: 'Debes seleccionar fecha y horario del pedido.', type: 'error' });
+      setToast({
+        open: true,
+        message: 'Debes seleccionar fecha y horario del pedido.',
+        type: 'error',
+      });
       return;
     }
 
     const minScheduledDate = getMinScheduledDate();
 
     if (scheduledDate < minScheduledDate) {
-      setToast({ open: true, message: 'Solo puedes seleccionar fechas desde el próximo día disponible.', type: 'error' });
+      setToast({
+        open: true,
+        message: 'Solo puedes seleccionar fechas desde el próximo día disponible.',
+        type: 'error',
+      });
       return;
     }
 
     if (scheduledTime < '14:00' || scheduledTime > '18:30') {
-      setToast({ open: true, message: 'Solo puedes seleccionar horarios entre 14:00 y 18:30 hrs.', type: 'error' });
+      setToast({
+        open: true,
+        message: 'Solo puedes seleccionar horarios entre 14:00 y 18:30 hrs.',
+        type: 'error',
+      });
+      return;
+    }
+
+    const currentCompany = JSON.parse(localStorage.getItem('currentCompany'));
+
+    if (!currentCompany?.id) {
+      setToast({
+        open: true,
+        message: 'No se pudo identificar la tienda del pedido.',
+        type: 'error',
+      });
       return;
     }
 
@@ -191,6 +283,7 @@ ${order.note || 'Sin comentarios'}
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        companyId: currentCompany.id,
         items: cart,
         notes: note,
         deliveryType: 'PROGRAMADO',
@@ -277,29 +370,26 @@ ${order.note || 'Sin comentarios'}
                   width={720}
                   height={180}
                   priority
-                  className="
-      h-auto
-      w-[170px]
-      sm:w-[220px]
-      lg:w-[260px]
-      object-contain
-    "
+                  className="h-auto w-[170px] object-contain sm:w-[220px] lg:w-[260px]"
                 />
               </div>
             </div>
 
-
-
             <div className="flex shrink-0 items-center gap-2 rounded-2xl bg-white px-1">
-
-
               <button
                 type="button"
                 title={user.name}
                 className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-900 transition hover:bg-slate-50"
                 aria-label="Usuario"
               >
-                <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  width="21"
+                  height="21"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <path d="M20 21a8 8 0 0 0-16 0" />
                   <circle cx="12" cy="8" r="4" />
                 </svg>
@@ -314,7 +404,14 @@ ${order.note || 'Sin comentarios'}
                 className="flex h-10 w-10 items-center justify-center rounded-xl text-pink-500 transition hover:bg-pink-50"
                 aria-label="Cerrar sesión"
               >
-                <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  width="21"
+                  height="21"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
                   <path d="M10 17l5-5-5-5" />
                   <path d="M15 12H3" />
@@ -343,22 +440,12 @@ ${order.note || 'Sin comentarios'}
                   </svg>
                 </a>
               ) : null}
-
-
-
             </div>
-
           </div>
         </header>
 
         <div className="grid w-full max-w-full gap-5 overflow-x-hidden xl:grid-cols-[1fr_350px]">
           <section className="w-full min-w-0 overflow-x-hidden rounded-[28px] border border-slate-200 bg-white/75 px-3 pb-3 pt-1 shadow-[0_2px_10px_rgba(0,0,0,0.04)] sm:p-4 lg:p-5">
-
-
-
-            {/* <div className="mb-3 flex h-12 w-full items-center rounded-2xl border border-slate-100 bg-white px-4 shadow-[0_2px_10px_rgba(0,0,0,0.04)]">
-              <span className="mr-3 text-lg text-slate-400">⌕</span> */}
-
             <div className="mb-3 flex h-12 w-full items-center rounded-2xl border border-slate-200 bg-white px-4 shadow-[0_2px_10px_rgba(0,0,0,0.04)]">
               <div className="mr-3 flex h-8 w-8 items-center justify-center rounded-xl bg-slate-50 text-slate-500">
                 <svg
@@ -383,10 +470,8 @@ ${order.note || 'Sin comentarios'}
               />
             </div>
 
-
-
             <div className="-mx-1 mb-5 flex max-w-full gap-2 overflow-x-auto border-b border-slate-200 px-1 pb-4">
-              {categories.map((category) => {
+              {dynamicCategories.map((category) => {
                 const active = selectedCategory === category.id;
 
                 return (
@@ -399,7 +484,7 @@ ${order.note || 'Sin comentarios'}
                       : 'border-slate-100 bg-white text-slate-500'
                       }`}
                   >
-                    <span>{category.icon}</span>
+                    <GiftMinimalIcon className="h-3.5 w-3.5" />
                     {category.label}
                   </button>
                 );
@@ -419,7 +504,7 @@ ${order.note || 'Sin comentarios'}
               {filteredProducts.map((product) => (
                 <article
                   key={product.id}
-                  className="w-full overflow-hidden rounded-[24px] border border-slate-100 bg-white shadow-[0_10px_28px_rgba(15,23,42,0.055)] transition hover:border-slate-200 hover:shadow-[0_18px_44px_rgba(244,63,94,0.10)]"
+                  className="relative overflow-hidden rounded-2xl bg-white shadow"
                 >
                   <div className="relative w-full overflow-hidden bg-slate-50">
                     <img
@@ -430,9 +515,32 @@ ${order.note || 'Sin comentarios'}
 
                     <button
                       type="button"
-                      className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white text-sm text-slate-400 shadow-[0_2px_10px_rgba(0,0,0,0.04)]"
+                      onClick={() => toggleLike(product.id)}
+                      style={{
+                        position: 'absolute',
+                        top: '12px',
+                        right: '12px',
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: '999px',
+                        border: '1px solid rgba(255,255,255,0.75)',
+                        background: 'rgba(255,255,255,0.92)',
+                        backdropFilter: 'blur(10px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        boxShadow: '0 8px 20px rgba(15, 23, 42, 0.12)',
+                        color: likedProducts.includes(product.id)
+                          ? '#ec407a'
+                          : '#64748b',
+                        fontSize: '18px',
+                        transition: 'all 0.2s ease',
+                        zIndex: 20,
+                      }}
+                      aria-label="Me gusta"
                     >
-                      ♡
+                      {likedProducts.includes(product.id) ? '♥' : '♡'}
                     </button>
                   </div>
 
@@ -521,7 +629,9 @@ ${order.note || 'Sin comentarios'}
                 </div>
               ) : (
                 cart.map((item) => {
-                  const productInfo = products.find((p) => p.id === item.productId);
+                  const productInfo = products.find(
+                    (p) => p.id === item.productId
+                  );
 
                   return (
                     <div
@@ -546,7 +656,9 @@ ${order.note || 'Sin comentarios'}
                       <div className="flex h-8 items-center rounded-full border border-slate-200 bg-slate-50">
                         <button
                           type="button"
-                          onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                          onClick={() =>
+                            updateQuantity(item.productId, item.quantity - 1)
+                          }
                           className="h-8 w-7 text-sm text-slate-500"
                         >
                           −
@@ -558,7 +670,9 @@ ${order.note || 'Sin comentarios'}
 
                         <button
                           type="button"
-                          onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                          onClick={() =>
+                            updateQuantity(item.productId, item.quantity + 1)
+                          }
                           className="h-8 w-7 text-sm text-slate-500"
                         >
                           +
@@ -568,9 +682,10 @@ ${order.note || 'Sin comentarios'}
                       <button
                         type="button"
                         onClick={() => removeItem(item.productId)}
-                        className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-50 text-xs text-red-400"
+                        className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-500"
+                        aria-label="Eliminar producto"
                       >
-                        🗑️
+                        <Trash2 size={16} strokeWidth={1.9} />
                       </button>
                     </div>
                   );
@@ -579,9 +694,15 @@ ${order.note || 'Sin comentarios'}
             </div>
 
             <div className="mt-4 rounded-[24px] border border-orange-100 bg-gradient-to-br from-orange-50 to-pink-50 p-4">
-              <h3 className="mb-4 text-base font-medium text-orange-600">
-                📅 Entrega programada
-              </h3>
+              <div className="mb-4 flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-orange-500 shadow-sm ring-1 ring-orange-100">
+                  <CalendarDays size={18} strokeWidth={1.8} />
+                </div>
+
+                <h3 className="text-base font-medium text-orange-600">
+                  Entrega programada
+                </h3>
+              </div>
 
               <div className="space-y-3">
                 <div>
@@ -635,7 +756,9 @@ ${order.note || 'Sin comentarios'}
 
             <div className="mt-4 rounded-[22px] bg-slate-50 p-4">
               <p className="text-xs text-slate-500">Cliente</p>
-              <p className="mt-1 text-sm font-medium text-slate-900">{user.name}</p>
+              <p className="mt-1 text-sm font-medium text-slate-900">
+                {user.name}
+              </p>
               <p className="text-xs text-slate-500">{user.email}</p>
 
               <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-4">
@@ -674,7 +797,6 @@ ${order.note || 'Sin comentarios'}
 
       <div className="fixed bottom-0 left-0 right-0 z-[80] border-t border-slate-200 bg-white/95 p-3 shadow-2xl backdrop-blur md:hidden">
         <div className="flex justify-between gap-3">
-
           <button
             type="button"
             onClick={() => {
@@ -703,12 +825,6 @@ ${order.note || 'Sin comentarios'}
               </span>
             </div>
           </button>
-
-
-
-
-
-
 
           <button
             type="button"

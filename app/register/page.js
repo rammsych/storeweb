@@ -1,13 +1,17 @@
 'use client';
+export const dynamic = 'force-dynamic';
 
-import { useState, useRef } from 'react';
+import { Suspense, useState, useRef } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Autocomplete, LoadScript } from '@react-google-maps/api';
 
 const libraries = ['places'];
 
-export default function RegisterPage() {
+function RegisterPageContent() {
   const autocompleteRef = useRef(null);
+  const searchParams = useSearchParams();
+  const store = searchParams.get('store');
 
   const [form, setForm] = useState({
     name: '',
@@ -41,14 +45,17 @@ export default function RegisterPage() {
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          store,
+        }),
       });
 
       const data = await res.json();
 
       if (res.ok) {
         alert('Cuenta creada correctamente');
-        window.location.href = '/login';
+        window.location.href = store ? `/login?store=${store}` : '/login';
       } else {
         alert(data.error || 'Error al crear cuenta');
       }
@@ -61,7 +68,10 @@ export default function RegisterPage() {
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-10">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
-        <h1 className="mb-2 text-3xl font-bold text-[#ff6b2c]">Crear cuenta</h1>
+        <h1 className="mb-2 text-3xl font-bold text-[#ff6b2c]">
+          Crear cuenta
+        </h1>
+
         <p className="mb-6 text-sm text-gray-600">
           Registro básico para el prototipo
         </p>
@@ -154,11 +164,22 @@ export default function RegisterPage() {
 
         <p className="mt-5 text-sm text-gray-600">
           ¿Ya tienes cuenta?{' '}
-          <Link href="/login" className="font-semibold text-[#ff6b2c]">
+          <Link
+            href={store ? `/login?store=${store}` : '/login'}
+            className="font-semibold text-[#ff6b2c]"
+          >
             Iniciar sesión
           </Link>
         </p>
       </div>
     </main>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-center">Cargando...</div>}>
+      <RegisterPageContent />
+    </Suspense>
   );
 }

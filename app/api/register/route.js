@@ -1,21 +1,31 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-// import prisma from "@/lib/prisma";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(request) {
   try {
     const body = await request.json();
 
-    const {
-      name,
-      email,
-      password,
-      phone,
-      address,
-      latitude,
-      longitude,
-    } = body;
+    const name = String(body.name || '').trim();
+    const email = String(body.email || '').trim().toLowerCase();
+    const phone = String(body.phone || '').trim();
+    const address = String(body.address || '').trim();
+    const password = String(body.password || '').trim();
+    const store = String(body.store || '').trim().toLowerCase();
+
+    const latitude =
+      body.latitude === '' ||
+      body.latitude === null ||
+      body.latitude === undefined
+        ? null
+        : Number(body.latitude);
+
+    const longitude =
+      body.longitude === '' ||
+      body.longitude === null ||
+      body.longitude === undefined
+        ? null
+        : Number(body.longitude);
 
     if (!name || !email || !password) {
       return NextResponse.json(
@@ -24,8 +34,30 @@ export async function POST(request) {
       );
     }
 
+    if (!store) {
+      return NextResponse.json(
+        { error: 'No se pudo identificar la tienda para el registro' },
+        { status: 400 }
+      );
+    }
+
+    const company = await prisma.company.findUnique({
+      where: {
+        slug: store,
+      },
+    });
+
+    if (!company || company.status === false) {
+      return NextResponse.json(
+        { error: 'La tienda no existe o no está disponible' },
+        { status: 404 }
+      );
+    }
+
     const existingUser = await prisma.user.findUnique({
-      where: { email },
+      where: {
+        email,
+      },
     });
 
     if (existingUser) {
@@ -37,43 +69,20 @@ export async function POST(request) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    console.log("HOTFIX REGISTER ACTIVE - COMMIT 3ffb5f2");
-
-    // HOT FIX TEMPORAL PRODUCCIÓN:
-    // El schema.prisma de main no conoce companyId,
-    // por eso insertamos directo con SQL.
-    await prisma.$executeRaw`
-      INSERT INTO "User" (
-        "id",
-        "name",
-        "email",
-        "phone",
-        "address",
-        "latitude",
-        "longitude",
-        "password",
-        "companyId",
-        "role",
-        "createdAt",
-        "updatedAt",
-        "isActive"
-      )
-      VALUES (
-        gen_random_uuid(),
-        ${name},
-        ${email},
-        ${phone || null},
-        ${address || null},
-        ${latitude || null},
-        ${longitude || null},
-        ${hashedPassword},
-        1,
-        'CUSTOMER',
-        NOW(),
-        NOW(),
-        true
-      )
-    `;
+    await prisma.user.create({
+      data: {
+        name,
+        email,
+        phone: phone || null,
+        address: address || null,
+        latitude,
+        longitude,
+        password: hashedPassword,
+        role: 'CUSTOMER',
+        isActive: true,
+        companyId: company.id,
+      },
+    });
 
     return NextResponse.json(
       { message: "Usuario registrado correctamente" },

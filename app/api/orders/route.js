@@ -78,6 +78,9 @@ export async function POST(request) {
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
+      include: {
+        company: true,
+      },
     });
 
     if (!user) {
@@ -106,80 +109,28 @@ export async function POST(request) {
       };
     });
 
-    const orderId = crypto.randomUUID();
-
-    const scheduledDateValue = scheduledDeliveryDate
-      ? new Date(`${scheduledDeliveryDate}T00:00:00`)
-      : null;
-
-    await prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`
-        INSERT INTO "Order" (
-          "id",
-          "userId",
-          "customerName",
-          "customerEmail",
-          "customerPhone",
-          "address",
-          "latitude",
-          "longitude",
-          "notes",
-          "status",
-          "companyId",
-          "deliveryType",
-          "scheduledDeliveryDate",
-          "scheduledDeliveryTime",
-          "totalEstimated",
-          "createdAt"
-        )
-        VALUES (
-          ${orderId},
-          ${user.id},
-          ${user.name || ''},
-          ${user.email},
-          ${user.phone || null},
-          ${user.address || null},
-          ${user.latitude ?? null},
-          ${user.longitude ?? null},
-          ${notes || null},
-          'pending',
-          1,
-          ${deliveryType || 'NORMAL'},
-          ${scheduledDateValue},
-          ${scheduledDeliveryTime || null},
-          ${totalEstimated},
-          NOW()
-        )
-      `;
-
-      for (const item of normalizedItems) {
-        await tx.$executeRaw`
-          INSERT INTO "OrderItem" (
-            "id",
-            "orderId",
-            "productId",
-            "productName",
-            "unitType",
-            "quantity",
-            "unitPrice",
-            "subtotal"
-          )
-          VALUES (
-            ${crypto.randomUUID()},
-            ${orderId},
-            ${item.productId},
-            ${item.productName},
-            ${item.unitType}::"UnitType",
-            ${item.quantity},
-            ${item.unitPrice},
-            ${item.subtotal}
-          )
-        `;
-      }
-    });
-
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
+    const order = await prisma.order.create({
+      data: {
+        userId: user.id,
+        companyId: user.companyId,
+        customerName: user.name || '',
+        customerEmail: user.email,
+        customerPhone: user.phone || null,
+        address: user.address || null,
+        latitude: user.latitude ?? null,
+        longitude: user.longitude ?? null,
+        notes: notes || null,
+        status: 'pending',
+        deliveryType: deliveryType || 'NORMAL',
+        scheduledDeliveryDate: scheduledDeliveryDate
+          ? new Date(`${scheduledDeliveryDate}T00:00:00`)
+          : null,
+        scheduledDeliveryTime: scheduledDeliveryTime || null,
+        totalEstimated,
+        items: {
+          create: normalizedItems,
+        },
+      },
       include: {
         items: true,
       },
@@ -219,10 +170,20 @@ export async function POST(request) {
       )
       .join('');
 
+
+    const vendorEmail = user.company?.email || process.env.VENDOR_EMAIL;
+
+    if (!vendorEmail) {
+      return NextResponse.json(
+        { error: 'La empresa no tiene correo de administrador configurado' },
+        { status: 400 }
+      );
+    }
+
     await transporter.sendMail({
       from: process.env.SMTP_FROM,
-      to: process.env.VENDOR_EMAIL,
-      subject: 'Nueva solicitud de compra – Verdulería',
+      to: vendorEmail,
+      subject: `Nueva solicitud de compra – ${user.company?.name || 'Tienda'}`,
       html: `
         <h2>Nueva solicitud de compra</h2>
         <p><strong>Cliente:</strong> ${order.customerName}</p>

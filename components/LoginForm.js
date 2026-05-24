@@ -1,6 +1,6 @@
 'use client';
 
-import { signIn } from 'next-auth/react';
+import { signIn, getSession } from 'next-auth/react';
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
@@ -8,41 +8,64 @@ import { Eye, EyeOff } from 'lucide-react';
 export default function LoginForm() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(event) {
     event.preventDefault();
+
     setLoading(true);
     setError('');
 
     const formData = new FormData(event.currentTarget);
+
     const email = formData.get('email');
     const password = formData.get('password');
+    const store = searchParams.get('store');
 
     const result = await signIn('credentials', {
       email,
       password,
+      store,
       redirect: false,
     });
-
-    setLoading(false);
 
     if (result?.error) {
       console.log('LOGIN ERROR:', result.error);
 
       if (result.error === 'USER_DISABLED') {
         setError('Tu cuenta fue deshabilitada. Contacta al administrador.');
+      } else if (result.error === 'USER_NOT_IN_STORE') {
+        setError('Este usuario no pertenece a esta tienda.');
       } else {
         setError('No fue posible iniciar sesión. Revisa tus datos.');
       }
 
+      setLoading(false);
       return;
     }
 
-    router.push(searchParams.get('callbackUrl') || '/catalog');
+    const session = await getSession();
+    const role = session?.user?.role;
+
+    const callbackUrl = searchParams.get('callbackUrl');
+
+    if (store) {
+      router.push(`/tienda/${store}`);
+    } else if (callbackUrl && callbackUrl !== '/catalog') {
+      router.push(callbackUrl);
+    } else if (role === 'SUPER_ADMIN') {
+      router.push('/super-admin');
+    } else if (role === 'ADMIN') {
+      router.push('/admin');
+    } else {
+      router.push('/catalog');
+    }
+
     router.refresh();
+    setLoading(false);
   }
 
   return (
@@ -67,7 +90,6 @@ export default function LoginForm() {
           Clave
         </label>
 
-        {/* <div className="flex items-center border-b border-white/85"> */}
         <div className="flex items-center border-b border-white/85">
           <input
             name="password"
@@ -84,8 +106,11 @@ export default function LoginForm() {
             className="ml-3 flex h-9 w-9 items-center justify-center text-white/80 hover:text-white"
             aria-label="Mostrar clave"
           >
-            {/* {showPassword ? <EyeOff size={22} /> : <Eye size={22} />} */}
-            {showPassword ? <EyeOff size={19} strokeWidth={1.6} /> : <Eye size={19} strokeWidth={1.6} />}
+            {showPassword ? (
+              <EyeOff size={19} strokeWidth={1.6} />
+            ) : (
+              <Eye size={19} strokeWidth={1.6} />
+            )}
           </button>
         </div>
       </div>
@@ -105,7 +130,4 @@ export default function LoginForm() {
       </button>
     </form>
   );
-
-
-
 }
