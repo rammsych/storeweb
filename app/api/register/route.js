@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request) {
   try {
@@ -29,7 +29,7 @@ export async function POST(request) {
 
     if (!name || !email || !password) {
       return NextResponse.json(
-        { error: 'Nombre, correo y contraseña son obligatorios' },
+        { error: "Nombre, email y contraseña son obligatorios" },
         { status: 400 }
       );
     }
@@ -54,15 +54,15 @@ export async function POST(request) {
       );
     }
 
-    const existing = await prisma.user.findUnique({
+    const existingUser = await prisma.user.findUnique({
       where: {
         email,
       },
     });
 
-    if (existing) {
+    if (existingUser) {
       return NextResponse.json(
-        { error: 'Ya existe un usuario con ese correo' },
+        { error: "El usuario ya existe" },
         { status: 400 }
       );
     }
@@ -84,14 +84,15 @@ export async function POST(request) {
       },
     });
 
-    return NextResponse.json({
-      message: 'Usuario creado correctamente',
-    });
+    return NextResponse.json(
+      { message: "Usuario registrado correctamente" },
+      { status: 201 }
+    );
   } catch (error) {
-    console.error('REGISTER API ERROR:', error);
+    console.error("REGISTER API ERROR:", error);
 
     return NextResponse.json(
-      { error: 'Error interno del servidor al crear la cuenta' },
+      { error: "Error al registrar usuario" },
       { status: 500 }
     );
   }

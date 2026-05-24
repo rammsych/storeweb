@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import nodemailer from 'nodemailer';
+import crypto from 'crypto';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request) {
   try {
@@ -31,20 +32,13 @@ export async function POST(request) {
       );
     }
 
-
     if (deliveryType === 'PROGRAMADO') {
-
-
-
-
       if (!scheduledDeliveryDate || !scheduledDeliveryTime) {
         return NextResponse.json(
           { error: 'Debes indicar fecha y horario para el pedido programado' },
           { status: 400 }
         );
       }
-
-
 
       const getChileDateString = (date) => {
         return new Intl.DateTimeFormat('en-CA', {
@@ -56,9 +50,7 @@ export async function POST(request) {
       };
 
       const now = new Date();
-
       const chileTodayString = getChileDateString(now);
-
       const chileToday = new Date(`${chileTodayString}T00:00:00`);
 
       chileToday.setDate(chileToday.getDate() + 1);
@@ -83,10 +75,6 @@ export async function POST(request) {
         );
       }
     }
-
-
-
-
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
