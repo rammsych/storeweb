@@ -79,10 +79,18 @@ export default async function StorePage({ params }) {
   }
 
   if (
+    session?.user &&
     session.user.role !== 'SUPER_ADMIN' &&
     session.user.companyId !== String(company.id)
   ) {
-    redirect('/catalog');
+    redirect(`/logout?store=${company.slug}`);
+  }
+
+  if (
+    session.user.role !== 'SUPER_ADMIN' &&
+    session.user.companyId !== String(company.id)
+  ) {
+    redirect(`/login?store=${company.slug}`);
   }
 
   const [products, categories] = await Promise.all([
