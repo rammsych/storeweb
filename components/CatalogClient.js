@@ -49,7 +49,7 @@ export default function CatalogClient({ products, categories = [], user, company
     localStorage.removeItem('token');
     localStorage.removeItem('jwt');
 
-    window.location.href = storeSlug ? `/${storeSlug}/login` : '/login';
+    window.location.href = storeSlug ? `/login?store=${storeSlug}` : '/login';
   }
 
   const dynamicCategories = [
