@@ -1,7 +1,7 @@
 'use client';
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import {
   Eye,
   Power,
@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import AdminShell from '@/components/AdminShell';
 
-export default function AdminCustomersPage() {
+function AdminCustomersPageContent() {
   const [customers, setCustomers] = useState([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -610,5 +610,13 @@ function InfoCard({ icon: Icon, label, value, accent = false }) {
         {value || 'Sin información'}
       </p>
     </div>
+  );
+}
+
+export default function AdminCustomersPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-center">Cargando...</div>}>
+      <AdminCustomersPageContent />
+    </Suspense>
   );
 }

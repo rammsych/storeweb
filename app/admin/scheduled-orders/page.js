@@ -1,7 +1,7 @@
 'use client';
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import AdminShell from '@/components/AdminShell';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
@@ -31,7 +31,7 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-export default function ScheduledOrdersPage() {
+function ScheduledOrdersPageContent() {
   const [events, setEvents] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -566,5 +566,13 @@ function InfoLine({ icon: Icon, label, value }) {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function ScheduledOrdersPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-center">Cargando...</div>}>
+      <ScheduledOrdersPageContent />
+    </Suspense>
   );
 }

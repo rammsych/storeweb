@@ -1,14 +1,14 @@
 'use client';
 export const dynamic = 'force-dynamic';
 
-import { useState, useRef } from 'react';
+import { Suspense, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Autocomplete, LoadScript } from '@react-google-maps/api';
 
 const libraries = ['places'];
 
-export default function RegisterPage() {
+function RegisterPageContent() {
   const autocompleteRef = useRef(null);
   const searchParams = useSearchParams();
   const store = searchParams.get('store');
@@ -173,5 +173,13 @@ export default function RegisterPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-center">Cargando...</div>}>
+      <RegisterPageContent />
+    </Suspense>
   );
 }

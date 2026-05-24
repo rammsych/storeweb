@@ -1,7 +1,7 @@
 'use client';
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, Suspense } from 'react';
 import AdminShell from '@/components/AdminShell';
 import {
   ShoppingBag,
@@ -15,7 +15,7 @@ import {
   ArrowUpRight,
 } from 'lucide-react';
 
-export default function AdminHomePage() {
+function AdminHomePageContent() {
   const [orders, setOrders] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -359,5 +359,13 @@ function SimpleLineChart({ data }) {
         ))}
       </div>
     </div>
+  );
+}
+
+export default function AdminHomePage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-center">Cargando...</div>}>
+      <AdminHomePageContent />
+    </Suspense>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState ,Suspense } from 'react';
 import {
   Search,
   ShoppingBag,
@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import AdminShell from '@/components/AdminShell';
 
-export default function AdminOrdersPage() {
+function AdminOrdersPageContent() {
   const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -598,4 +598,13 @@ function formatDate(dateValue) {
   } catch {
     return dateValue;
   }
+}
+
+
+export default function AdminOrdersPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-center">Cargando...</div>}>
+      <AdminOrdersPageContent />
+    </Suspense>
+  );
 }
