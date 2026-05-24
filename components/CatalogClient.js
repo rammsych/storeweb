@@ -398,8 +398,7 @@ ${order.note || 'Sin comentarios'}
               <button
                 type="button"
                 onClick={() => {
-                  localStorage.removeItem('token');
-                  window.location.href = '/login';
+                  window.location.href = `/logout?store=${company?.slug || ''}`;
                 }}
                 className="flex h-10 w-10 items-center justify-center rounded-xl text-pink-500 transition hover:bg-pink-50"
                 aria-label="Cerrar sesión"
