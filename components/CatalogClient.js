@@ -43,18 +43,15 @@ export default function CatalogClient({ products, categories = [], user, company
   function handleLogout() {
     const storeSlug = company?.slug || '';
 
-    localStorage.removeItem('user');
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('authUser');
-    localStorage.removeItem('token');
-    localStorage.removeItem('jwt');
+    localStorage.clear();
+    sessionStorage.clear();
 
-    localStorage.removeItem('currentCompany');
-    localStorage.removeItem('company');
-    localStorage.removeItem('store');
-    localStorage.removeItem('storeSlug');
+    document.cookie.split(';').forEach((cookie) => {
+      const name = cookie.split('=')[0].trim();
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+    });
 
-    window.location.href = `/logout?store=${storeSlug}`;
+    window.location.replace(`/logout?store=${encodeURIComponent(storeSlug)}`);
   }
 
   const dynamicCategories = [
