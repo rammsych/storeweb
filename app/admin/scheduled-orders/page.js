@@ -45,7 +45,15 @@ export default function ScheduledOrdersPage() {
     try {
       setLoading(true);
 
-      const response = await fetch('/api/admin/scheduled-orders', {
+      const params = new URLSearchParams(window.location.search);
+
+      const companyId = params.get('companyId');
+
+      const url = companyId
+        ? `/api/admin/scheduled-orders?companyId=${encodeURIComponent(companyId)}`
+        : '/api/admin/scheduled-orders';
+
+      const response = await fetch(url, {
         cache: 'no-store',
       });
 
@@ -526,11 +534,10 @@ function OrderModal({ selectedOrder, onClose }) {
 function InfoCard({ icon: Icon, label, value, accent = false }) {
   return (
     <div
-      className={`rounded-[22px] border p-4 ${
-        accent
+      className={`rounded-[22px] border p-4 ${accent
           ? 'border-orange-100 bg-orange-50/60'
           : 'border-slate-100 bg-slate-50'
-      }`}
+        }`}
     >
       <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-orange-500 shadow-sm">
         <Icon className="h-5 w-5" />

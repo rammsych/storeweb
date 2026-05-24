@@ -44,7 +44,7 @@ export async function POST(request) {
         );
       }
 
-    
+
 
       const getChileDateString = (date) => {
         return new Intl.DateTimeFormat('en-CA', {
@@ -90,6 +90,9 @@ export async function POST(request) {
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
+      include: {
+        company: true,
+      },
     });
 
     if (!user) {
@@ -121,6 +124,7 @@ export async function POST(request) {
     const order = await prisma.order.create({
       data: {
         userId: user.id,
+        companyId: user.companyId,
         customerName: user.name || '',
         customerEmail: user.email,
         customerPhone: user.phone || null,
@@ -178,10 +182,20 @@ export async function POST(request) {
       )
       .join('');
 
+
+    const vendorEmail = user.company?.email || process.env.VENDOR_EMAIL;
+
+    if (!vendorEmail) {
+      return NextResponse.json(
+        { error: 'La empresa no tiene correo de administrador configurado' },
+        { status: 400 }
+      );
+    }
+
     await transporter.sendMail({
       from: process.env.SMTP_FROM,
-      to: process.env.VENDOR_EMAIL,
-      subject: 'Nueva solicitud de compra – Verdulería',
+      to: vendorEmail,
+      subject: `Nueva solicitud de compra – ${user.company?.name || 'Tienda'}`,
       html: `
         <h2>Nueva solicitud de compra</h2>
         <p><strong>Cliente:</strong> ${order.customerName}</p>

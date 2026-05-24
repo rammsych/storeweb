@@ -38,27 +38,34 @@ export default function AdminCustomersPage() {
   };
 
   const loadCustomers = async () => {
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      const res = await fetch('/api/admin/customers', {
-        cache: 'no-store',
-      });
+    const params = new URLSearchParams(window.location.search);
+    const companyId = params.get('companyId');
 
-      const data = await res.json();
+    const url = companyId
+      ? `/api/admin/customers?companyId=${encodeURIComponent(companyId)}`
+      : '/api/admin/customers';
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Error al cargar clientes');
-      }
+    const res = await fetch(url, {
+      cache: 'no-store',
+    });
 
-      setCustomers(data.customers || []);
-    } catch (error) {
-      console.error(error);
-      showMessage('Error al cargar clientes');
-    } finally {
-      setLoading(false);
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Error al cargar clientes');
     }
-  };
+
+    setCustomers(data.customers || []);
+  } catch (error) {
+    console.error(error);
+    showMessage('Error al cargar clientes');
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     loadCustomers();
@@ -291,11 +298,10 @@ export default function AdminCustomersPage() {
                         </h3>
 
                         <span
-                          className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
-                            customer.isActive
+                          className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${customer.isActive
                               ? 'bg-emerald-50 text-emerald-600'
                               : 'bg-red-50 text-red-500'
-                          }`}
+                            }`}
                         >
                           {customer.isActive ? 'Activo' : 'Inactivo'}
                         </span>
@@ -320,8 +326,8 @@ export default function AdminCustomersPage() {
                           href={
                             customer.address
                               ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                                  customer.address
-                                )}`
+                                customer.address
+                              )}`
                               : null
                           }
                           external
@@ -588,11 +594,10 @@ function CustomerModal({
 function InfoCard({ icon: Icon, label, value, accent = false }) {
   return (
     <div
-      className={`rounded-[22px] border p-4 ${
-        accent
+      className={`rounded-[22px] border p-4 ${accent
           ? 'border-orange-100 bg-orange-50/60'
           : 'border-slate-100 bg-slate-50'
-      }`}
+        }`}
     >
       <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-orange-500 shadow-sm">
         <Icon className="h-5 w-5" />

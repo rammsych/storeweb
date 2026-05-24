@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { serializeBigInt } from '@/lib/serialize';
 
 export async function PATCH(request, { params }) {
   try {
@@ -21,12 +22,12 @@ export async function PATCH(request, { params }) {
       },
     });
 
-    return NextResponse.json({ customer });
+    return NextResponse.json(serializeBigInt({ customer }));
   } catch (error) {
     console.error('Error updating customer status:', error);
 
     return NextResponse.json(
-      { error: 'Error al actualizar estado del cliente' },
+      serializeBigInt({ error: 'Error al actualizar estado del cliente' }),
       { status: 500 }
     );
   }

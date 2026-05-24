@@ -1,7 +1,10 @@
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
+
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { serializeBigInt } from '@/lib/serialize';
+
 import CatalogClient from '@/components/CatalogClient';
 
 export default async function CatalogPage() {
@@ -12,18 +15,59 @@ export default async function CatalogPage() {
   }
 
   let products = [];
+  let categories = [];
 
   try {
-    products = await prisma.product.findMany({
-      where: { isActive: true },
-      orderBy: { name: 'asc' },
+    const sessionCompanyId = session.user.companyId
+      ? BigInt(session.user.companyId)
+      : null;
+
+    const where =
+      session.user.role === 'SUPER_ADMIN'
+        ? {
+            isActive: true,
+          }
+        : {
+            isActive: true,
+            companyId: sessionCompanyId,
+          };
+
+    categories = await prisma.productCategory.findMany({
+      where:
+        session.user.role === 'SUPER_ADMIN'
+          ? {}
+          : {
+              companyId: sessionCompanyId,
+            },
+      orderBy: {
+        name: 'asc',
+      },
     });
 
-    console.log('Catalog products loaded:', products.length);
+    products = await prisma.product.findMany({
+      where,
+      orderBy: {
+        name: 'asc',
+      },
+    });
+
+    console.log(
+      'Catalog products loaded:',
+      products.length,
+      'company:',
+      session.user.companyId
+    );
   } catch (error) {
     console.error('Error loading catalog products:', error);
     products = [];
+    categories = [];
   }
 
-  return <CatalogClient products={products} user={session.user} />;
+  return (
+    <CatalogClient
+      products={serializeBigInt(products)}
+      categories={serializeBigInt(categories)}
+      user={serializeBigInt(session.user)}
+    />
+  );
 }

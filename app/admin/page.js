@@ -27,9 +27,21 @@ export default function AdminHomePage() {
     try {
       setLoading(true);
 
+      const params = new URLSearchParams(window.location.search);
+
+      const companyId = params.get('companyId');
+
+      const ordersUrl = companyId
+        ? `/api/admin/orders?companyId=${encodeURIComponent(companyId)}`
+        : '/api/admin/orders';
+
+      const customersUrl = companyId
+        ? `/api/admin/customers?companyId=${encodeURIComponent(companyId)}`
+        : '/api/admin/customers';
+
       const [ordersRes, customersRes] = await Promise.all([
-        fetch('/api/admin/orders', { cache: 'no-store' }),
-        fetch('/api/admin/customers', { cache: 'no-store' }),
+        fetch(ordersUrl, { cache: 'no-store' }),
+        fetch(customersUrl, { cache: 'no-store' }),
       ]);
 
       const ordersData = await ordersRes.json();
@@ -69,9 +81,9 @@ export default function AdminHomePage() {
     const averageTicket =
       orders.length > 0
         ? orders.reduce(
-            (sum, order) => sum + Number(order.totalEstimated || 0),
-            0
-          ) / orders.length
+          (sum, order) => sum + Number(order.totalEstimated || 0),
+          0
+        ) / orders.length
         : 0;
 
     return {

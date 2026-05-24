@@ -11,14 +11,19 @@ export async function POST(request) {
     const phone = String(body.phone || '').trim();
     const address = String(body.address || '').trim();
     const password = String(body.password || '').trim();
+    const store = String(body.store || '').trim().toLowerCase();
 
     const latitude =
-      body.latitude === '' || body.latitude === null || body.latitude === undefined
+      body.latitude === '' ||
+      body.latitude === null ||
+      body.latitude === undefined
         ? null
         : Number(body.latitude);
 
     const longitude =
-      body.longitude === '' || body.longitude === null || body.longitude === undefined
+      body.longitude === '' ||
+      body.longitude === null ||
+      body.longitude === undefined
         ? null
         : Number(body.longitude);
 
@@ -29,8 +34,30 @@ export async function POST(request) {
       );
     }
 
+    if (!store) {
+      return NextResponse.json(
+        { error: 'No se pudo identificar la tienda para el registro' },
+        { status: 400 }
+      );
+    }
+
+    const company = await prisma.company.findUnique({
+      where: {
+        slug: store,
+      },
+    });
+
+    if (!company || company.status === false) {
+      return NextResponse.json(
+        { error: 'La tienda no existe o no está disponible' },
+        { status: 404 }
+      );
+    }
+
     const existing = await prisma.user.findUnique({
-      where: { email },
+      where: {
+        email,
+      },
     });
 
     if (existing) {
@@ -51,6 +78,9 @@ export async function POST(request) {
         latitude,
         longitude,
         password: hashedPassword,
+        role: 'CUSTOMER',
+        isActive: true,
+        companyId: company.id,
       },
     });
 
