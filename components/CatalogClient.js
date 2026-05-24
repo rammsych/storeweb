@@ -49,7 +49,12 @@ export default function CatalogClient({ products, categories = [], user, company
     localStorage.removeItem('token');
     localStorage.removeItem('jwt');
 
-    window.location.href = storeSlug ? `/login?store=${storeSlug}` : '/login';
+    localStorage.removeItem('currentCompany');
+    localStorage.removeItem('company');
+    localStorage.removeItem('store');
+    localStorage.removeItem('storeSlug');
+
+    window.location.href = `/logout?store=${storeSlug}`;
   }
 
   const dynamicCategories = [
@@ -404,11 +409,10 @@ ${order.note || 'Sin comentarios'}
                     key={category.id}
                     type="button"
                     onClick={() => setSelectedCategory(category.id)}
-                    className={`flex h-10 shrink-0 items-center gap-2 rounded-2xl border px-4 text-xs transition ${
-                      active
-                        ? 'border-pink-300 bg-pink-50 text-pink-600'
-                        : 'border-slate-100 bg-white text-slate-500'
-                    }`}
+                    className={`flex h-10 shrink-0 items-center gap-2 rounded-2xl border px-4 text-xs transition ${active
+                      ? 'border-pink-300 bg-pink-50 text-pink-600'
+                      : 'border-slate-100 bg-white text-slate-500'
+                      }`}
                   >
                     <GiftMinimalIcon className="h-3.5 w-3.5" />
                     {category.label}
