@@ -10,9 +10,6 @@ import {
   Palette,
 } from 'lucide-react';
 
-const DEFAULT_PRIMARY_COLOR = '#FF7A00';
-const DEFAULT_SECONDARY_COLOR = '#FFF3E8';
-
 export default function SuperAdminCompaniesClient({
   companies: initialCompanies,
 }) {
@@ -47,8 +44,8 @@ export default function SuperAdminCompaniesClient({
     display_name: '',
     slogan: '',
     logo_url: '',
-    primary_color: DEFAULT_PRIMARY_COLOR,
-    secondary_color: DEFAULT_SECONDARY_COLOR,
+    primary_color: '#E83E8C',
+    secondary_color: '#FFF1F7',
   });
 
   async function createCompany(e) {
@@ -344,15 +341,13 @@ export default function SuperAdminCompaniesClient({
                       display_name: company.display_name || company.name || '',
                       slogan: company.slogan || '',
                       logo_url: company.logo_url || '',
-                      primary_color:
-                        company.primary_color || DEFAULT_PRIMARY_COLOR,
-                      secondary_color:
-                        company.secondary_color || DEFAULT_SECONDARY_COLOR,
+                      primary_color: company.primary_color || '#E83E8C',
+                      secondary_color: company.secondary_color || '#FFF1F7',
                     });
 
                     setOpenBranding(true);
                   }}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-medium text-orange-600 transition hover:bg-orange-500 hover:text-white"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-pink-200 bg-pink-50 px-4 py-3 text-sm font-medium text-pink-600 transition hover:bg-pink-500 hover:text-white"
                 >
                   <Palette className="h-4 w-4" />
                   Branding
@@ -496,7 +491,7 @@ export default function SuperAdminCompaniesClient({
           <div className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-t-[30px] bg-white p-5 shadow-2xl sm:rounded-[30px] sm:p-7">
             <div className="mb-6 flex items-start justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-orange-500">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-pink-500">
                   Identidad visual
                 </p>
 
@@ -531,7 +526,7 @@ export default function SuperAdminCompaniesClient({
                       display_name: e.target.value,
                     })
                   }
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-orange-300 focus:bg-white"
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-pink-300 focus:bg-white"
                 />
 
                 <input
@@ -543,7 +538,7 @@ export default function SuperAdminCompaniesClient({
                       slogan: e.target.value,
                     })
                   }
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-orange-300 focus:bg-white"
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-pink-300 focus:bg-white"
                 />
 
                 <input
@@ -555,7 +550,7 @@ export default function SuperAdminCompaniesClient({
                       logo_url: e.target.value,
                     })
                   }
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-orange-300 focus:bg-white"
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-pink-300 focus:bg-white"
                 />
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -568,8 +563,7 @@ export default function SuperAdminCompaniesClient({
                       <div
                         className="h-10 w-10 shrink-0 rounded-xl border border-white shadow-sm"
                         style={{
-                          backgroundColor:
-                            brandingForm.primary_color || DEFAULT_PRIMARY_COLOR,
+                          backgroundColor: brandingForm.primary_color,
                         }}
                       />
 
@@ -587,9 +581,7 @@ export default function SuperAdminCompaniesClient({
 
                       <input
                         type="color"
-                        value={
-                          brandingForm.primary_color || DEFAULT_PRIMARY_COLOR
-                        }
+                        value={brandingForm.primary_color}
                         onChange={(e) =>
                           setBrandingForm({
                             ...brandingForm,
@@ -610,9 +602,7 @@ export default function SuperAdminCompaniesClient({
                       <div
                         className="h-10 w-10 shrink-0 rounded-xl border border-white shadow-sm"
                         style={{
-                          backgroundColor:
-                            brandingForm.secondary_color ||
-                            DEFAULT_SECONDARY_COLOR,
+                          backgroundColor: brandingForm.secondary_color,
                         }}
                       />
 
@@ -630,10 +620,7 @@ export default function SuperAdminCompaniesClient({
 
                       <input
                         type="color"
-                        value={
-                          brandingForm.secondary_color ||
-                          DEFAULT_SECONDARY_COLOR
-                        }
+                        value={brandingForm.secondary_color}
                         onChange={(e) =>
                           setBrandingForm({
                             ...brandingForm,
@@ -649,18 +636,16 @@ export default function SuperAdminCompaniesClient({
                 <button
                   type="submit"
                   disabled={savingBranding}
-                  className="w-full rounded-2xl bg-orange-500 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-60"
+                  className="w-full rounded-2xl bg-pink-500 py-3 text-sm font-semibold text-white transition hover:bg-pink-600 disabled:opacity-60"
                 >
                   {savingBranding ? 'Guardando branding...' : 'Guardar branding'}
                 </button>
               </div>
 
               <aside
-                className="rounded-[28px] border border-orange-100 p-4 shadow-[0_14px_40px_rgba(15,23,42,0.08)]"
+                className="rounded-[28px] border border-slate-100 p-4 shadow-[0_14px_40px_rgba(15,23,42,0.08)]"
                 style={{
-                  background: `linear-gradient(160deg, ${
-                    brandingForm.secondary_color || DEFAULT_SECONDARY_COLOR
-                  }, #ffffff)`,
+                  background: `linear-gradient(160deg, ${brandingForm.secondary_color || '#FFF1F7'}, #ffffff)`,
                 }}
               >
                 <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
@@ -671,9 +656,7 @@ export default function SuperAdminCompaniesClient({
                   <div
                     className="flex items-center gap-3 px-4 py-4"
                     style={{
-                      backgroundColor:
-                        brandingForm.secondary_color ||
-                        DEFAULT_SECONDARY_COLOR,
+                      backgroundColor: brandingForm.secondary_color || '#FFF1F7',
                     }}
                   >
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm">
@@ -687,9 +670,7 @@ export default function SuperAdminCompaniesClient({
                         <Building2
                           className="h-6 w-6"
                           style={{
-                            color:
-                              brandingForm.primary_color ||
-                              DEFAULT_PRIMARY_COLOR,
+                            color: brandingForm.primary_color || '#E83E8C',
                           }}
                         />
                       )}
@@ -701,7 +682,7 @@ export default function SuperAdminCompaniesClient({
                       </h3>
 
                       <p className="truncate text-xs text-slate-500">
-                        {brandingForm.slogan || 'Comercio digital inteligente'}
+                        {brandingForm.slogan || 'Tu tienda personalizada'}
                       </p>
                     </div>
                   </div>
@@ -723,9 +704,7 @@ export default function SuperAdminCompaniesClient({
                           <p
                             className="text-sm font-semibold"
                             style={{
-                              color:
-                                brandingForm.primary_color ||
-                                DEFAULT_PRIMARY_COLOR,
+                              color: brandingForm.primary_color || '#E83E8C',
                             }}
                           >
                             $3.990
@@ -740,8 +719,7 @@ export default function SuperAdminCompaniesClient({
                           className="flex h-10 w-10 items-center justify-center rounded-full text-xl text-white"
                           style={{
                             backgroundColor:
-                              brandingForm.primary_color ||
-                              DEFAULT_PRIMARY_COLOR,
+                              brandingForm.primary_color || '#E83E8C',
                           }}
                         >
                           +

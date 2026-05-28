@@ -41,15 +41,18 @@ export async function POST(request) {
       );
     }
 
-    const existingUser = await prisma.user.findUnique({
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const existingUser = await prisma.user.findFirst({
       where: {
-        email: email.toLowerCase(),
+        email: normalizedEmail,
+        companyId: BigInt(companyId),
       },
     });
 
     if (existingUser) {
       return NextResponse.json(
-        serializeBigInt({ error: 'El correo ya existe' }),
+        serializeBigInt({ error: 'Este correo ya existe en esta empresa' }),
         { status: 400 }
       );
     }
@@ -59,7 +62,7 @@ export async function POST(request) {
     const user = await prisma.user.create({
       data: {
         name,
-        email: email.toLowerCase(),
+        email: normalizedEmail,
         password: hashedPassword,
         phone,
         role: 'ADMIN',
@@ -75,7 +78,7 @@ export async function POST(request) {
       })
     );
   } catch (error) {
-    console.error(error);
+    console.error('CREATE COMPANY ADMIN ERROR:', error);
 
     return NextResponse.json(
       serializeBigInt({ error: 'Error interno del servidor' }),

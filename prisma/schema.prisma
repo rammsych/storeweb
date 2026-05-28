@@ -28,13 +28,22 @@ model Company {
   id               BigInt   @id @default(autoincrement())
   name             String
   slug             String   @unique
+
   address          String?
   responsible_name String?
   email            String?
   phone            String?
+
+  // BRANDING
+  display_name     String?
+  slogan           String?
   logo_url         String?
+  primary_color    String?  @default("#FF7A00")
+  secondary_color  String?  @default("#FFF3E8")
+
   status           Boolean  @default(true)
   maintenanceMode  Boolean  @default(false) @map("maintenance_mode")
+
   created_at       DateTime @default(now())
 
   users      User[]
@@ -44,11 +53,10 @@ model Company {
 
   @@map("companies")
 }
-
 model User {
   id        String   @id @default(cuid())
   name      String?
-  email     String   @unique
+  email     String
   password  String
   phone     String?
   address   String?
@@ -63,6 +71,8 @@ model User {
   company   Company? @relation(fields: [companyId], references: [id])
 
   orders Order[]
+
+  @@unique([companyId, email])
 }
 
 model ProductCategory {
