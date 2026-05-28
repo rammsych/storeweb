@@ -15,15 +15,15 @@ export async function POST(request) {
 
     const latitude =
       body.latitude === '' ||
-      body.latitude === null ||
-      body.latitude === undefined
+        body.latitude === null ||
+        body.latitude === undefined
         ? null
         : Number(body.latitude);
 
     const longitude =
       body.longitude === '' ||
-      body.longitude === null ||
-      body.longitude === undefined
+        body.longitude === null ||
+        body.longitude === undefined
         ? null
         : Number(body.longitude);
 
@@ -54,9 +54,10 @@ export async function POST(request) {
       );
     }
 
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await prisma.user.findFirst({
       where: {
         email,
+        companyId: company.id,
       },
     });
 
