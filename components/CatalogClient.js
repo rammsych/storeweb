@@ -34,6 +34,42 @@ export default function CatalogClient({ products, categories = [], user, company
     type: 'success',
   });
 
+  const primaryColor = company?.primary_color || '#FF7A00';
+  const secondaryColor = company?.secondary_color || '#FFF3E8';
+
+
+  function lightenColor(hex, percent = 18) {
+    const num = parseInt(hex.replace('#', ''), 16);
+
+    let r = (num >> 16) + percent;
+    let g = ((num >> 8) & 0x00ff) + percent;
+    let b = (num & 0x0000ff) + percent;
+
+    r = r > 255 ? 255 : r;
+    g = g > 255 ? 255 : g;
+    b = b > 255 ? 255 : b;
+
+    return `#${(
+      g |
+      (b << 8) |
+      (r << 16)
+    )
+      .toString(16)
+      .padStart(6, '0')}`;
+  }
+
+  const gradientColor = lightenColor(primaryColor, 35);
+
+
+
+
+
+
+
+  const storeName = company?.display_name || company?.name || 'Tienda';
+  const storeSlogan = company?.slogan || 'Comercio digital inteligente';
+  const storeLogo = company?.logo_url;
+
   useEffect(() => {
     if (company) {
       localStorage.setItem('currentCompany', JSON.stringify(company));
@@ -312,26 +348,57 @@ ${order.note || 'Sin comentarios'}
   });
 
   return (
-    <main className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#fff8f8] px-3 pb-24 pt-4 font-[Montserrat] text-slate-900 antialiased sm:px-5 lg:px-8 lg:pb-8">
-      <MobileToast
-        open={toast.open}
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast((current) => ({ ...current, open: false }))}
-      />
+    <main
+      className="min-h-screen w-full max-w-full overflow-x-hidden px-3 pb-24 pt-4 font-[Montserrat] text-slate-900 antialiased sm:px-5 lg:px-8 lg:pb-8"
+      style={{
+        background: `linear-gradient(180deg, ${secondaryColor}, #ffffff 45%, #fff8f8)`,
+      }}
+    >
 
       <section className="mx-auto w-full max-w-[1400px] overflow-x-hidden">
-        <header className="mb-4 w-full rounded-[24px] border border-slate-200 bg-white px-4 py-4 shadow-[0_2px_10px_rgba(0,0,0,0.04)]">
+        <header
+          className="mb-4 w-full rounded-[24px] border border-slate-200 bg-white px-4 py-4 shadow-[0_2px_10px_rgba(0,0,0,0.04)]"
+          style={{
+            borderColor: `${primaryColor}22`,
+          }}
+        >
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <Image
-                src="/logo-navbar.png"
-                alt="Bitrineo"
-                width={720}
-                height={180}
-                priority
-                className="h-auto w-[170px] object-contain sm:w-[220px] lg:w-[260px]"
-              />
+              <div
+                className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm"
+                style={{
+                  border: `1px solid ${primaryColor}33`,
+                  backgroundColor: secondaryColor,
+                }}
+              >
+                {storeLogo ? (
+                  <img
+                    src={storeLogo}
+                    alt={storeName}
+                    className="h-full w-full object-contain p-2"
+                  />
+                ) : (
+                  <GiftMinimalIcon
+                    className="h-7 w-7"
+                    style={{ color: primaryColor }}
+                  />
+                )}
+              </div>
+
+              <div className="min-w-0">
+                <h1 className="truncate text-lg font-semibold text-slate-950 sm:text-xl">
+                  {storeName}
+                </h1>
+
+                <p className="truncate text-xs text-slate-500">
+                  {storeSlogan}
+                </p>
+
+                <div className="mt-1 flex items-center gap-1 text-[10px] text-slate-400">
+                  Powered by
+                  <span className="font-semibold text-orange-500">Bitrineo</span>
+                </div>
+              </div>
             </div>
 
             <div className="flex shrink-0 items-center gap-2 rounded-2xl bg-white px-1">
@@ -350,7 +417,11 @@ ${order.note || 'Sin comentarios'}
               <button
                 type="button"
                 onClick={handleLogout}
-                className="flex h-10 w-10 items-center justify-center rounded-xl text-pink-500 transition hover:bg-pink-50"
+                className="flex h-10 w-10 items-center justify-center rounded-xl transition"
+                style={{
+                  color: primaryColor,
+                  backgroundColor: `${secondaryColor}66`,
+                }}
                 aria-label="Cerrar sesión"
                 title="Cerrar sesión"
               >
@@ -406,10 +477,17 @@ ${order.note || 'Sin comentarios'}
                     key={category.id}
                     type="button"
                     onClick={() => setSelectedCategory(category.id)}
-                    className={`flex h-10 shrink-0 items-center gap-2 rounded-2xl border px-4 text-xs transition ${active
-                      ? 'border-pink-300 bg-pink-50 text-pink-600'
-                      : 'border-slate-100 bg-white text-slate-500'
+                    className={`flex h-10 shrink-0 items-center gap-2 rounded-2xl border px-4 text-xs transition ${active ? '' : 'border-slate-100 bg-white text-slate-500'
                       }`}
+                    style={
+                      active
+                        ? {
+                          color: primaryColor,
+                          backgroundColor: secondaryColor,
+                          borderColor: `${primaryColor}55`,
+                        }
+                        : undefined
+                    }
                   >
                     <GiftMinimalIcon className="h-3.5 w-3.5" />
                     {category.label}
@@ -470,12 +548,20 @@ ${order.note || 'Sin comentarios'}
                     ) : null}
 
                     <div className="mt-3 flex items-baseline gap-1">
-                      <span className="text-2xl font-medium text-pink-600">{formatPrice(product.price)}</span>
+                      <span
+                        className="text-2xl font-medium"
+                        style={{ color: primaryColor }}
+                      >
+                        {formatPrice(product.price)}
+                      </span>
                       <span className="text-xs text-slate-400">/{getUnitLabel(product.unitType)}</span>
                     </div>
 
                     <div className="mt-4 flex items-center justify-between gap-3">
-                      <div className="flex h-10 min-w-[120px] items-center justify-center rounded-full border border-slate-200 bg-pink-50">
+                      <div
+                        className="flex h-10 min-w-[120px] items-center justify-center rounded-full border border-slate-200"
+                        style={{ backgroundColor: secondaryColor }}
+                      >
                         <button type="button" onClick={() => changeProductQty(product.id, 'minus')} className="flex h-10 w-10 items-center justify-center text-sm text-slate-500">
                           −
                         </button>
@@ -492,14 +578,24 @@ ${order.note || 'Sin comentarios'}
                       <button
                         type="button"
                         onClick={() => addToCart(product)}
-                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-orange-500 text-2xl leading-none text-white shadow-md shadow-pink-100 active:scale-95"
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-2xl leading-none text-white shadow-md active:scale-95"
+                        style={{
+                          background: `linear-gradient(135deg, ${primaryColor}, ${gradientColor})`,
+                          boxShadow: `0 10px 25px ${primaryColor}33`,
+                        }}
                         aria-label={`Agregar ${product.name}`}
                       >
                         +
                       </button>
                     </div>
 
-                    <span className="mt-3 inline-flex rounded-full bg-pink-50 px-3 py-1 text-[11px] text-pink-500">
+                    <span
+                      className="mt-3 inline-flex rounded-full px-3 py-1 text-[11px]"
+                      style={{
+                        backgroundColor: secondaryColor,
+                        color: primaryColor,
+                      }}
+                    >
                       por {getUnitLabel(product.unitType)}
                     </span>
                   </div>
@@ -537,7 +633,12 @@ ${order.note || 'Sin comentarios'}
 
                       <div className="min-w-0 flex-1">
                         <h3 className="line-clamp-1 text-xs font-medium text-slate-900">{item.productName}</h3>
-                        <p className="mt-0.5 text-xs font-medium text-pink-600">{formatPrice(item.unitPrice)}</p>
+                        <p
+                          className="mt-0.5 text-xs font-medium"
+                          style={{ color: primaryColor }}
+                        >
+                          {formatPrice(item.unitPrice)}
+                        </p>
                       </div>
 
                       <div className="flex h-8 items-center rounded-full border border-slate-200 bg-slate-50">
@@ -626,7 +727,12 @@ ${order.note || 'Sin comentarios'}
 
               <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-4">
                 <span className="text-sm font-medium text-slate-700">Total estimado</span>
-                <span className="text-2xl font-medium text-pink-600">{formatPrice(total)}</span>
+                <span
+                  className="text-2xl font-medium"
+                  style={{ color: primaryColor }}
+                >
+                  {formatPrice(total)}
+                </span>
               </div>
             </div>
 
@@ -634,7 +740,11 @@ ${order.note || 'Sin comentarios'}
               type="button"
               onClick={submitOrder}
               disabled={sending}
-              className="mt-4 flex h-12 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-pink-600 to-orange-500 text-sm font-medium text-white shadow-lg shadow-pink-100 transition hover:-translate-y-0.5 disabled:opacity-60"
+              className="mt-4 flex h-12 w-full items-center justify-center rounded-2xl text-sm font-medium text-white shadow-lg transition hover:-translate-y-0.5 disabled:opacity-60"
+              style={{
+                background: `linear-gradient(135deg, ${primaryColor}, ${gradientColor})`,
+                boxShadow: `0 12px 28px ${primaryColor}33`,
+              }}
             >
               {sending ? 'Enviando...' : 'Realizar pedido'}
               <span className="ml-2 text-lg">→</span>
@@ -677,7 +787,11 @@ ${order.note || 'Sin comentarios'}
               const section = document.getElementById('tu-solicitud');
               if (section) section.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-pink-600 to-orange-500 px-4 py-3 text-sm font-medium text-white shadow-lg shadow-pink-100"
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-medium text-white shadow-lg"
+            style={{
+              background: `linear-gradient(135deg, ${primaryColor}, ${gradientColor})`,
+              boxShadow: `0 12px 28px ${primaryColor}33`,
+            }}
           >
             Ver pedido · {formatPrice(total)}
           </button>

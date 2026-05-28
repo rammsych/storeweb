@@ -118,6 +118,11 @@ export default async function StorePage({ params }) {
     id: String(company.id),
     slug: company.slug,
     name: company.name,
+    display_name: company.display_name,
+    slogan: company.slogan,
+    logo_url: company.logo_url,
+    primary_color: company.primary_color || '#FF7A00',
+    secondary_color: company.secondary_color || '#FFF3E8',
     maintenanceMode: company.maintenanceMode,
   };
 
