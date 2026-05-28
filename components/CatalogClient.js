@@ -415,6 +415,8 @@ ${order.note || 'Sin comentarios'}
                 </svg>
               </button>
 
+              
+
               <button
                 type="button"
                 onClick={handleLogout}
