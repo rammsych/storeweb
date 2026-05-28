@@ -18,6 +18,7 @@ export async function POST(request) {
 
     const body = await request.json();
     const {
+      companyId,
       items,
       notes,
       deliveryType,
@@ -76,8 +77,18 @@ export async function POST(request) {
       }
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+    if (!companyId) {
+      return NextResponse.json(
+        { error: 'No se pudo identificar la empresa del pedido' },
+        { status: 400 }
+      );
+    }
+
+    const user = await prisma.user.findFirst({
+      where: {
+        email: session.user.email,
+        companyId: BigInt(companyId),
+      },
       include: {
         company: true,
       },
