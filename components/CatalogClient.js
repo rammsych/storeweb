@@ -27,6 +27,7 @@ export default function CatalogClient({ products, categories = [], user, company
   const [selectedCategory, setSelectedCategory] = useState('todas');
   const [lastOrderForWhatsApp, setLastOrderForWhatsApp] = useState(null);
   const [likedProducts, setLikedProducts] = useState([]);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   const [toast, setToast] = useState({
     open: false,
@@ -508,7 +509,12 @@ ${order.note || 'Sin comentarios'}
                     <img
                       src={product.imageUrl || '/placeholder-product.png'}
                       alt={product.name}
-                      className="h-[190px] w-full object-cover sm:h-[165px] lg:h-[145px]"
+                      onClick={() =>
+                        setSelectedImage(
+                          product.imageUrl || '/placeholder-product.png'
+                        )
+                      }
+                      className="h-[190px] w-full cursor-zoom-in object-cover transition hover:scale-[1.02] sm:h-[165px] lg:h-[145px]"
                     />
 
                     <button
@@ -797,6 +803,34 @@ ${order.note || 'Sin comentarios'}
           </button>
         </div>
       </div>
+
+
+      {selectedImage && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div
+            className="relative w-full max-w-6xl overflow-hidden rounded-[34px] border border-white/10 bg-white/5 p-[1px] shadow-[0_25px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setSelectedImage(null)}
+              className="absolute right-5 top-5 z-20 flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-black/35 text-3xl text-white backdrop-blur-md transition hover:scale-105 hover:bg-black/50"
+            >
+              ×
+            </button>
+
+            <img
+              src={selectedImage}
+              alt="Vista ampliada"
+              className="max-h-[88vh] w-full rounded-[32px] object-contain bg-[#f8f8f8]"
+            />
+          </div>
+        </div>
+      )}
+
 
       <FloatingCartButton itemCount={itemCount} />
     </main>
