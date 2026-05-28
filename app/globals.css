@@ -83,10 +83,15 @@ button {
   transition: background-color 9999s ease-in-out 0s !important;
 }
 
+html,
 body {
   font-family: var(--font-montserrat), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  font-family: inherit;
 }
 
 @media (max-width: 768px) {

@@ -21,6 +21,7 @@ export default function CatalogClient({ products, categories = [], user, company
   const [productQuantities, setProductQuantities] = useState({});
   const [note, setNote] = useState('');
   const [sending, setSending] = useState(false);
+  const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
   const [searchText, setSearchText] = useState('');
@@ -233,18 +234,103 @@ ${order.note || 'Sin comentarios'}
 `;
   };
 
-  const sendOrderToWhatsApp = (order) => {
-    const phone = process.env.NEXT_PUBLIC_SELLER_WHATSAPP;
 
-    if (!phone) {
-      alert('No está configurado NEXT_PUBLIC_SELLER_WHATSAPP');
+
+  // const sendOrderToWhatsApp = (order) => {
+  //   const phone = company?.phone;
+
+  //   if (!phone) {
+  //     setToast({
+  //       open: true,
+  //       message: 'Esta tienda no tiene WhatsApp configurado',
+  //       type: 'error',
+  //     });
+
+  //     return;
+  //   }
+
+  //   const cleanPhone = String(phone).replace(/\D/g, '');
+
+  //   const message = buildWhatsAppMessage(order);
+  //   const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+
+  //   window.open(url, '_blank');
+  // };
+
+
+  // const sendOrderToWhatsApp = (order) => {
+  //   const phone = company?.phone;
+
+  //   if (!phone) {
+  //     setToast({
+  //       open: true,
+  //       message: 'Esta tienda no tiene WhatsApp configurado',
+  //       type: 'error',
+  //     });
+
+  //     return;
+  //   }
+
+  //   setSendingWhatsApp(true);
+
+  //   const cleanPhone = String(phone).replace(/\D/g, '');
+  //   const message = buildWhatsAppMessage(order);
+  //   const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+
+  //   window.open(url, '_blank');
+
+  //   setTimeout(() => {
+  //     setSendingWhatsApp(false);
+  //     setLastOrderForWhatsApp(null);
+
+  //     setToast({
+  //       open: true,
+  //       message: 'WhatsApp abierto correctamente',
+  //       type: 'success',
+  //     });
+
+  //     window.scrollTo({ top: 0, behavior: 'smooth' });
+  //   }, 900);
+  // };
+
+
+
+  const sendOrderToWhatsApp = (order) => {
+    const phone = company?.phone;
+    const cleanPhone = String(phone || '').replace(/\D/g, '');
+
+    if (!cleanPhone) {
+      setToast({
+        open: true,
+        message: 'Esta tienda no tiene WhatsApp configurado',
+        type: 'error',
+      });
       return;
     }
 
+    setSendingWhatsApp(true);
+
     const message = buildWhatsAppMessage(order);
-    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
+    const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+
+    setToast({
+      open: true,
+      message: 'Abriendo WhatsApp...',
+      type: 'success',
+    });
+
+    setTimeout(() => {
+      window.open(url, '_blank', 'noopener,noreferrer');
+
+      setSendingWhatsApp(false);
+      setLastOrderForWhatsApp(null);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 400);
   };
+
+
+
+
 
   async function submitOrder() {
     if (cart.length === 0) {
@@ -415,7 +501,7 @@ ${order.note || 'Sin comentarios'}
                 </svg>
               </button>
 
-              
+
 
               <button
                 type="button"
@@ -748,23 +834,43 @@ ${order.note || 'Sin comentarios'}
               type="button"
               onClick={submitOrder}
               disabled={sending}
-              className="mt-4 flex h-12 w-full items-center justify-center rounded-2xl text-sm font-medium text-white shadow-lg transition hover:-translate-y-0.5 disabled:opacity-60"
+              className="mt-4 flex h-12 w-full items-center justify-center rounded-2xl text-sm font-medium text-white shadow-lg transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-80"
               style={{
                 background: `linear-gradient(135deg, ${primaryColor}, ${gradientColor})`,
                 boxShadow: `0 12px 28px ${primaryColor}33`,
               }}
             >
-              {sending ? 'Enviando...' : 'Realizar pedido'}
-              <span className="ml-2 text-lg">→</span>
+              {sending ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                  Enviando pedido...
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  Realizar pedido
+                  <span className="text-lg">→</span>
+                </span>
+              )}
             </button>
 
             {lastOrderForWhatsApp ? (
               <button
                 type="button"
                 onClick={() => sendOrderToWhatsApp(lastOrderForWhatsApp)}
-                className="mt-3 h-12 w-full rounded-2xl bg-green-600 px-4 text-sm font-medium text-white hover:bg-green-700"
+                disabled={sendingWhatsApp}
+                className="mt-3 flex h-12 w-full items-center justify-center rounded-2xl bg-green-600 px-4 text-sm font-medium text-white shadow-lg shadow-green-100 transition hover:-translate-y-0.5 hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-80"
               >
-                Enviar pedido por WhatsApp
+                {sendingWhatsApp ? (
+                  <span className="flex items-center gap-2">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                    Abriendo WhatsApp...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    Enviar pedido por WhatsApp
+                    <span>↗</span>
+                  </span>
+                )}
               </button>
             ) : null}
           </aside>
@@ -832,6 +938,13 @@ ${order.note || 'Sin comentarios'}
           </div>
         </div>
       )}
+
+
+      <MobileToast
+        open={toast.open}
+        message={toast.message}
+        type={toast.type}
+      />
 
 
       <FloatingCartButton itemCount={itemCount} />

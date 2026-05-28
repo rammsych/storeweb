@@ -194,9 +194,15 @@ export async function POST(request) {
     await transporter.sendMail({
       from: process.env.SMTP_FROM,
       to: vendorEmail,
-      subject: `Nueva solicitud de compra – ${user.company?.name || 'Tienda'}`,
+      subject: `🛒 Nuevo pedido recibido | ${user.company?.display_name || user.company?.name || 'Bitrineo'}`,
       html: `
-        <h2>Nueva solicitud de compra</h2>
+        <h2 style="margin:0 0 18px 0;font-size:24px;color:#111827;">
+  🛒 Nuevo pedido recibido
+</h2>
+
+<p style="margin-bottom:18px;color:#6b7280;">
+  Plataforma Bitrineo Commerce
+</p>
         <p><strong>Cliente:</strong> ${order.customerName}</p>
         <p><strong>Email:</strong> ${order.customerEmail}</p>
         <p><strong>Teléfono:</strong> ${order.customerPhone || '-'}</p>
@@ -212,9 +218,15 @@ export async function POST(request) {
     await transporter.sendMail({
       from: process.env.SMTP_FROM,
       to: order.customerEmail,
-      subject: 'Recibimos tu solicitud de compra',
+      subject: `✨ Pedido recibido | ${user.company?.display_name || user.company?.name}`,
       html: `
-        <h2>Gracias por tu solicitud</h2>
+        <h2 style="margin:0 0 18px 0;font-size:24px;color:#111827;">
+  ✨ Pedido recibido correctamente
+</h2>
+
+<p style="margin-bottom:18px;color:#6b7280;">
+  Gracias por comprar en ${user.company?.display_name || user.company?.name}
+</p>
         <p>Hola ${order.customerName}, recibimos correctamente tu pedido.</p>
         ${deliveryHtml}
         <p><strong>Total estimado:</strong> $${order.totalEstimated}</p>
