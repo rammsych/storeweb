@@ -5,6 +5,7 @@ import { Suspense, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Autocomplete, LoadScript } from '@react-google-maps/api';
+import { signIn } from 'next-auth/react';
 
 const libraries = ['places'];
 
@@ -54,8 +55,20 @@ function RegisterPageContent() {
       const data = await res.json();
 
       if (res.ok) {
-        alert('Cuenta creada correctamente');
-        window.location.href = store ? `/login?store=${store}` : '/login';
+        const loginResult = await signIn('credentials', {
+          email: form.email,
+          password: form.password,
+          store,
+          redirect: false,
+        });
+
+        if (loginResult?.error) {
+          alert('Cuenta creada correctamente. Ahora inicia sesión.');
+          window.location.href = store ? `/login?store=${store}` : '/login';
+          return;
+        }
+
+        window.location.href = store ? `/tienda/${store}` : '/catalog';
       } else {
         alert(data.error || 'Error al crear cuenta');
       }

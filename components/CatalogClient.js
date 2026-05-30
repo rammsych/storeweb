@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { signOut } from 'next-auth/react';
 import { formatPrice, getUnitLabel } from '@/lib/format';
 import FloatingCartButton from '@/components/FloatingCartButton';
 import MobileToast from '@/components/MobileToast';
 import Image from 'next/image';
 import { CalendarDays, Trash2 } from 'lucide-react';
+
 
 function GiftMinimalIcon({ className = '' }) {
   return (
@@ -29,6 +31,11 @@ export default function CatalogClient({ products, categories = [], user, company
   const [lastOrderForWhatsApp, setLastOrderForWhatsApp] = useState(null);
   const [likedProducts, setLikedProducts] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [showAuthMenu, setShowAuthMenu] = useState(false);
+
+  const [customerName, setCustomerName] = useState(user?.name || '');
+  const [customerEmail, setCustomerEmail] = useState(user?.email || '');
+  const [customerPhone, setCustomerPhone] = useState(user?.phone || '');
 
   const [toast, setToast] = useState({
     open: false,
@@ -78,18 +85,16 @@ export default function CatalogClient({ products, categories = [], user, company
     }
   }, [company]);
 
-  function handleLogout() {
+  async function handleLogout() {
     const storeSlug = company?.slug || '';
 
     localStorage.clear();
     sessionStorage.clear();
 
-    document.cookie.split(';').forEach((cookie) => {
-      const name = cookie.split('=')[0].trim();
-      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+    await signOut({
+      redirect: true,
+      callbackUrl: `/tienda/${storeSlug}`,
     });
-
-    window.location.replace(`/logout?store=${encodeURIComponent(storeSlug)}`);
   }
 
   const dynamicCategories = [
@@ -355,6 +360,15 @@ ${order.note || 'Sin comentarios'}
       return;
     }
 
+    if (!customerName.trim() || !customerEmail.trim() || !customerPhone.trim()) {
+      setToast({
+        open: true,
+        message: 'Debes ingresar nombre, correo y teléfono para enviar el pedido.',
+        type: 'error',
+      });
+      return;
+    }
+
     const currentCompany = JSON.parse(localStorage.getItem('currentCompany'));
 
     if (!currentCompany?.id) {
@@ -369,6 +383,9 @@ ${order.note || 'Sin comentarios'}
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         companyId: currentCompany.id,
+        customerName,
+        customerEmail,
+        customerPhone,
         items: cart,
         notes: note,
         deliveryType: 'PROGRAMADO',
@@ -398,8 +415,8 @@ ${order.note || 'Sin comentarios'}
     }
 
     setLastOrderForWhatsApp({
-      customerName: user.name,
-      customerEmail: user.email,
+      customerName,
+      customerEmail,
       items: cart,
       total,
       deliveryDate: scheduledDate,
@@ -449,6 +466,14 @@ ${order.note || 'Sin comentarios'}
             borderColor: `${primaryColor}22`,
           }}
         >
+
+          {showAuthMenu && (
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setShowAuthMenu(false)}
+            />
+          )}
+
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <div
@@ -488,53 +513,91 @@ ${order.note || 'Sin comentarios'}
               </div>
             </div>
 
-            <div className="flex shrink-0 items-center gap-2 rounded-2xl bg-white px-1">
-              <button
-                type="button"
-                title={user.name}
-                className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-900 transition hover:bg-slate-50"
-                aria-label="Usuario"
-              >
-                <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20 21a8 8 0 0 0-16 0" />
-                  <circle cx="12" cy="8" r="4" />
-                </svg>
-              </button>
-
-
-
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="flex h-10 w-10 items-center justify-center rounded-xl transition"
-                style={{
-                  color: primaryColor,
-                  backgroundColor: `${secondaryColor}66`,
-                }}
-                aria-label="Cerrar sesión"
-                title="Cerrar sesión"
-              >
-                <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-                  <path d="M10 17l5-5-5-5" />
-                  <path d="M15 12H3" />
-                </svg>
-              </button>
-
-              {user.role === 'ADMIN' ? (
-                <a
-                  href="/admin"
-                  title="Panel administrador"
-                  aria-label="Panel administrador"
-                  className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-900 transition hover:bg-slate-50"
+            <div className="relative flex shrink-0 items-center gap-2 rounded-2xl bg-white px-1">
+              {user ? (
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl transition hover:scale-105"
+                  style={{
+                    color: primaryColor,
+                    backgroundColor: `${secondaryColor}66`,
+                  }}
+                  aria-label="Cerrar sesión"
+                  title="Cerrar sesión"
                 >
-                  <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="7" width="18" height="13" rx="2" />
-                    <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                    <path d="M10 17l5-5-5-5" />
+                    <path d="M15 12H3" />
                   </svg>
-                </a>
-              ) : null}
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setShowAuthMenu(!showAuthMenu)}
+                    className="flex h-10 w-10 items-center justify-center rounded-xl transition hover:scale-105"
+                    style={{
+                      color: primaryColor,
+                      backgroundColor: `${secondaryColor}66`,
+                    }}
+                  >
+                    <svg
+                      width="22"
+                      height="22"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <circle cx="12" cy="8" r="4" />
+                      <path d="M20 21a8 8 0 0 0-16 0" />
+                    </svg>
+                  </button>
+
+                  {showAuthMenu && (
+                    <div
+                      className="absolute right-0 top-12 z-50 w-64 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl"
+                    >
+                      <div className="p-4">
+                        <a
+                          href={`/login?store=${company?.slug || ''}`}
+                          className="flex h-12 items-center justify-center rounded-2xl font-medium text-white"
+                          style={{
+                            background: `linear-gradient(135deg, ${primaryColor}, ${gradientColor})`,
+                          }}
+                        >
+                          Inicia sesión
+                        </a>
+
+                        <p className="mt-4 text-center text-sm text-slate-600">
+                          ¿No tienes cuenta?
+                          {' '}
+                          <a
+                            href={`/register?store=${company?.slug || ''}`}
+                            className="font-semibold"
+                            style={{ color: primaryColor }}
+                          >
+                            Crea una
+                          </a>
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
+
+
+
           </div>
         </header>
 
@@ -815,9 +878,33 @@ ${order.note || 'Sin comentarios'}
             </div>
 
             <div className="mt-4 rounded-[22px] bg-slate-50 p-4">
-              <p className="text-xs text-slate-500">Cliente</p>
-              <p className="mt-1 text-sm font-medium text-slate-900">{user.name}</p>
-              <p className="text-xs text-slate-500">{user.email}</p>
+              <p className="text-xs font-medium text-slate-500">Datos del cliente</p>
+
+              <div className="mt-3 space-y-3">
+                <input
+                  type="text"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="Nombre"
+                  className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-pink-400"
+                />
+
+                <input
+                  type="email"
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                  placeholder="Correo"
+                  className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-pink-400"
+                />
+
+                <input
+                  type="tel"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  placeholder="Teléfono / WhatsApp"
+                  className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-pink-400"
+                />
+              </div>
 
               <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-4">
                 <span className="text-sm font-medium text-slate-700">Total estimado</span>

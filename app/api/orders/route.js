@@ -2,29 +2,39 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import nodemailer from 'nodemailer';
-import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(request) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: 'Usuario no autenticado' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
+
     const {
       companyId,
+      customerName,
+      customerEmail,
+      customerPhone,
       items,
       notes,
       deliveryType,
       scheduledDeliveryDate,
       scheduledDeliveryTime,
     } = body;
+
+    if (!companyId) {
+      return NextResponse.json(
+        { error: 'No se pudo identificar la empresa del pedido' },
+        { status: 400 }
+      );
+    }
+
+    if (!customerName || !customerEmail || !customerPhone) {
+      return NextResponse.json(
+        { error: 'Debes ingresar nombre, correo y teléfono' },
+        { status: 400 }
+      );
+    }
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -77,28 +87,32 @@ export async function POST(request) {
       }
     }
 
-    if (!companyId) {
-      return NextResponse.json(
-        { error: 'No se pudo identificar la empresa del pedido' },
-        { status: 400 }
-      );
-    }
-
-    const user = await prisma.user.findFirst({
+    const company = await prisma.company.findUnique({
       where: {
-        email: session.user.email,
-        companyId: BigInt(companyId),
-      },
-      include: {
-        company: true,
+        id: BigInt(companyId),
       },
     });
 
-    if (!user) {
+    if (!company) {
       return NextResponse.json(
-        { error: 'Usuario no encontrado' },
+        { error: 'Empresa no encontrada' },
         { status: 404 }
       );
+    }
+
+    let userId = null;
+
+    if (session?.user?.email) {
+      const loggedUser = await prisma.user.findFirst({
+        where: {
+          email: session.user.email,
+          companyId: BigInt(companyId),
+        },
+      });
+
+      if (loggedUser) {
+        userId = loggedUser.id;
+      }
     }
 
     let totalEstimated = 0;
@@ -122,14 +136,14 @@ export async function POST(request) {
 
     const order = await prisma.order.create({
       data: {
-        userId: user.id,
-        companyId: user.companyId,
-        customerName: user.name || '',
-        customerEmail: user.email,
-        customerPhone: user.phone || null,
-        address: user.address || null,
-        latitude: user.latitude ?? null,
-        longitude: user.longitude ?? null,
+        userId,
+        companyId: BigInt(companyId),
+        customerName: customerName.trim(),
+        customerEmail: customerEmail.trim(),
+        customerPhone: customerPhone.trim(),
+        address: null,
+        latitude: null,
+        longitude: null,
         notes: notes || null,
         status: 'pending',
         deliveryType: deliveryType || 'NORMAL',
@@ -181,8 +195,7 @@ export async function POST(request) {
       )
       .join('');
 
-
-    const vendorEmail = user.company?.email || process.env.VENDOR_EMAIL;
+    const vendorEmail = company.email || process.env.VENDOR_EMAIL;
 
     if (!vendorEmail) {
       return NextResponse.json(
@@ -191,25 +204,31 @@ export async function POST(request) {
       );
     }
 
+    const companyName = company.display_name || company.name || 'Bitrineo';
+
     await transporter.sendMail({
       from: process.env.SMTP_FROM,
       to: vendorEmail,
-      subject: `🛒 Nuevo pedido recibido | ${user.company?.display_name || user.company?.name || 'Bitrineo'}`,
+      subject: `🛒 Nuevo pedido recibido | ${companyName}`,
       html: `
         <h2 style="margin:0 0 18px 0;font-size:24px;color:#111827;">
-  🛒 Nuevo pedido recibido
-</h2>
+          🛒 Nuevo pedido recibido
+        </h2>
 
-<p style="margin-bottom:18px;color:#6b7280;">
-  Plataforma Bitrineo Commerce
-</p>
+        <p style="margin-bottom:18px;color:#6b7280;">
+          Plataforma Bitrineo Commerce
+        </p>
+
         <p><strong>Cliente:</strong> ${order.customerName}</p>
         <p><strong>Email:</strong> ${order.customerEmail}</p>
         <p><strong>Teléfono:</strong> ${order.customerPhone || '-'}</p>
         <p><strong>Dirección:</strong> ${order.address || '-'}</p>
         <p><strong>Comentario:</strong> ${order.notes || '-'}</p>
+
         ${deliveryHtml}
+
         <p><strong>Total estimado:</strong> $${order.totalEstimated}</p>
+
         <h3>Productos</h3>
         <ul>${itemsHtml}</ul>
       `,
@@ -218,20 +237,25 @@ export async function POST(request) {
     await transporter.sendMail({
       from: process.env.SMTP_FROM,
       to: order.customerEmail,
-      subject: `✨ Pedido recibido | ${user.company?.display_name || user.company?.name}`,
+      subject: `✨ Pedido recibido | ${companyName}`,
       html: `
         <h2 style="margin:0 0 18px 0;font-size:24px;color:#111827;">
-  ✨ Pedido recibido correctamente
-</h2>
+          ✨ Pedido recibido correctamente
+        </h2>
 
-<p style="margin-bottom:18px;color:#6b7280;">
-  Gracias por comprar en ${user.company?.display_name || user.company?.name}
-</p>
+        <p style="margin-bottom:18px;color:#6b7280;">
+          Gracias por comprar en ${companyName}
+        </p>
+
         <p>Hola ${order.customerName}, recibimos correctamente tu pedido.</p>
+
         ${deliveryHtml}
+
         <p><strong>Total estimado:</strong> $${order.totalEstimated}</p>
+
         <h3>Productos solicitados</h3>
         <ul>${itemsHtml}</ul>
+
         <p><strong>Comentario:</strong> ${order.notes || '-'}</p>
         <p>Pronto nos pondremos en contacto contigo.</p>
       `,
