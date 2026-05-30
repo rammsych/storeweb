@@ -109,7 +109,7 @@ model Product {
 
 model Order {
   id                    String   @id @default(cuid())
-  userId                String
+  userId                String?
   customerName          String
   customerEmail         String
   customerPhone         String?
@@ -127,7 +127,7 @@ model Order {
   companyId BigInt?
   company   Company? @relation(fields: [companyId], references: [id])
 
-  user  User        @relation(fields: [userId], references: [id])
+  user  User?       @relation(fields: [userId], references: [id])
   items OrderItem[]
 }
 
