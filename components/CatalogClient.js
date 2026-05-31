@@ -521,11 +521,11 @@ ${order.note || 'Sin comentarios'}
             <div className="relative flex shrink-0 items-center gap-2 rounded-2xl bg-white px-1">
               {user ? (
                 <>
-                  
+
 
                   {isAdminUser && (
                     <a
-                      href="/admin"
+                      href={`/admin?companyId=${company?.id || ''}&store=${company?.slug || ''}&storeName=${encodeURIComponent(storeName)}`}
                       className="flex h-10 w-10 items-center justify-center rounded-xl transition hover:scale-105"
                       style={{
                         color: primaryColor,
