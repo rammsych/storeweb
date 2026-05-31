@@ -45,28 +45,59 @@ export default function AdminShell({ children }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const companyName = searchParams.get('companyName');
+  const companyId = searchParams.get('companyId');
+  const companyName =
+    searchParams.get('companyName') ||
+    searchParams.get('storeName');
+
+  const storeSlug = searchParams.get('store');
+
   const fromSuperAdmin =
     searchParams.get('fromSuperAdmin') === '1';
 
   const exitHref = fromSuperAdmin
     ? '/super-admin'
-    : '/catalog';
+    : storeSlug
+      ? `/tienda/${storeSlug}`
+      : '/';
 
-  const companyId = searchParams.get('companyId');
+  // const getAdminHref = (href) => {
+  //   if (!fromSuperAdmin || !companyId || !companyName) {
+  //     return href;
+  //   }
+
+  //   const params = new URLSearchParams({
+  //     companyId,
+  //     companyName,
+  //     fromSuperAdmin: '1',
+  //   });
+
+  //   return `${href}?${params.toString()}`;
+  // };
+
 
   const getAdminHref = (href) => {
-    if (!fromSuperAdmin || !companyId || !companyName) {
-      return href;
+    const params = new URLSearchParams();
+
+    if (companyId) {
+      params.set('companyId', companyId);
     }
 
-    const params = new URLSearchParams({
-      companyId,
-      companyName,
-      fromSuperAdmin: '1',
-    });
+    if (companyName) {
+      params.set('companyName', companyName);
+    }
 
-    return `${href}?${params.toString()}`;
+    if (storeSlug) {
+      params.set('store', storeSlug);
+    }
+
+    if (fromSuperAdmin) {
+      params.set('fromSuperAdmin', '1');
+    }
+
+    const query = params.toString();
+
+    return query ? `${href}?${query}` : href;
   };
 
 
@@ -94,8 +125,8 @@ export default function AdminShell({ children }) {
                   key={item.href}
                   href={getAdminHref(item.href)}
                   className={`flex items-center gap-4 rounded-2xl px-5 py-4 text-[15px] font-semibold transition-all ${active
-                      ? 'bg-gradient-to-r from-[#ff6a00] to-[#ff8a1f] text-white shadow-lg shadow-orange-500/25'
-                      : 'text-slate-600 hover:bg-orange-50 hover:text-orange-600'
+                    ? 'bg-gradient-to-r from-[#ff6a00] to-[#ff8a1f] text-white shadow-lg shadow-orange-500/25'
+                    : 'text-slate-600 hover:bg-orange-50 hover:text-orange-600'
                     }`}
                 >
                   <Icon className="h-5 w-5" />
@@ -205,8 +236,8 @@ export default function AdminShell({ children }) {
                 key={item.href}
                 href={getAdminHref(item.href)}
                 className={`flex flex-col items-center justify-center rounded-2xl py-2 text-[11px] font-semibold ${active
-                    ? 'bg-orange-500 text-white'
-                    : 'text-slate-500'
+                  ? 'bg-orange-500 text-white'
+                  : 'text-slate-500'
                   }`}
               >
                 <Icon className="mb-1 h-5 w-5" />

@@ -19,8 +19,14 @@ function AdminHomePageContent() {
   const [orders, setOrders] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [storeSlug, setStoreSlug] = useState('');
+  const [storeName, setStoreName] = useState('Mi negocio');
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    setStoreSlug(params.get('store') || '');
+    setStoreName(params.get('storeName') || 'Mi negocio');
     loadDashboard();
   }, []);
 
@@ -157,7 +163,7 @@ function AdminHomePageContent() {
           </p>
 
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
-            Resumen del negocio
+            Resumen de {storeName}
           </h1>
 
           <p className="mt-2 max-w-2xl text-sm text-slate-500">
