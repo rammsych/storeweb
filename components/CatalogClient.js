@@ -451,6 +451,11 @@ ${order.note || 'Sin comentarios'}
     return matchesText && matchesCategory;
   });
 
+
+  const isAdminUser =
+    user?.role === 'ADMIN' ||
+    user?.role === 'SUPER_ADMIN';
+
   return (
     <main
       className="min-h-screen w-full max-w-full overflow-x-hidden px-3 pb-24 pt-4 font-[Montserrat] text-slate-900 antialiased sm:px-5 lg:px-8 lg:pb-8"
@@ -477,7 +482,7 @@ ${order.note || 'Sin comentarios'}
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <div
-                className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm"
+                className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm"
                 style={{
                   border: `1px solid ${primaryColor}33`,
                   backgroundColor: secondaryColor,
@@ -487,7 +492,7 @@ ${order.note || 'Sin comentarios'}
                   <img
                     src={storeLogo}
                     alt={storeName}
-                    className="h-full w-full object-contain p-2"
+                    className="h-[90%] w-[90%] object-contain"
                   />
                 ) : (
                   <GiftMinimalIcon
@@ -515,30 +520,63 @@ ${order.note || 'Sin comentarios'}
 
             <div className="relative flex shrink-0 items-center gap-2 rounded-2xl bg-white px-1">
               {user ? (
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl transition hover:scale-105"
-                  style={{
-                    color: primaryColor,
-                    backgroundColor: `${secondaryColor}66`,
-                  }}
-                  aria-label="Cerrar sesión"
-                  title="Cerrar sesión"
-                >
-                  <svg
-                    width="22"
-                    height="22"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
+                <>
+                  
+
+                  {isAdminUser && (
+                    <a
+                      href="/admin"
+                      className="flex h-10 w-10 items-center justify-center rounded-xl transition hover:scale-105"
+                      style={{
+                        color: primaryColor,
+                        backgroundColor: `${secondaryColor}66`,
+                      }}
+                      aria-label="Administrar empresa"
+                      title="Administrar empresa"
+                    >
+                      <svg
+                        width="22"
+                        height="22"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect x="3" y="3" width="7" height="7" rx="1" />
+                        <rect x="14" y="3" width="7" height="7" rx="1" />
+                        <rect x="3" y="14" width="7" height="7" rx="1" />
+                        <rect x="14" y="14" width="7" height="7" rx="1" />
+                      </svg>
+                    </a>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="flex h-10 w-10 items-center justify-center rounded-xl transition hover:scale-105"
+                    style={{
+                      color: primaryColor,
+                      backgroundColor: `${secondaryColor}66`,
+                    }}
+                    aria-label="Cerrar sesión"
+                    title="Cerrar sesión"
                   >
-                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-                    <path d="M10 17l5-5-5-5" />
-                    <path d="M15 12H3" />
-                  </svg>
-                </button>
+                    <svg
+                      width="22"
+                      height="22"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                      <path d="M10 17l5-5-5-5" />
+                      <path d="M15 12H3" />
+                    </svg>
+                  </button>
+                </>
               ) : (
                 <>
                   <button

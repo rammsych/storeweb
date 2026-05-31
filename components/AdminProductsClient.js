@@ -162,7 +162,11 @@ export default function AdminProductsClient({
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch('/api/admin/upload-product-image', {
+    const uploadUrl = companyId
+      ? `/api/admin/upload-product-image?companyId=${encodeURIComponent(companyId)}`
+      : '/api/admin/upload-product-image';
+
+    const response = await fetch(uploadUrl, {
       method: 'POST',
       body: formData,
     });
