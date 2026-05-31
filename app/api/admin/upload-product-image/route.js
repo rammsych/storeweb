@@ -11,7 +11,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
-    if (session.user.role !== 'ADMIN') {
+    if (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN') {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 
@@ -35,8 +35,8 @@ export async function POST(request) {
 
     const safeName = file.name.replace(/\s+/g, '-').toLowerCase();
     const blob = await put(`products/${safeName}`, file, {
-    access: 'public',
-    addRandomSuffix: true,
+      access: 'public',
+      addRandomSuffix: true,
     });
 
     return NextResponse.json({
